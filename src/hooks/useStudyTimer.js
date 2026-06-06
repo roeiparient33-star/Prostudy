@@ -1,0 +1,129 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '../lib/supabase';
+
+const LS_KEY = 'ps_timer_v2';
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_KEY)) || {};
+    if (saved.date && saved.date !== today()) return {}; // יום חדש — איפוס
+    return saved;
+  } catch { return {}; }
+}
+
+export function useStudyTimer(userId, onStopped) {
+  const saved = loadState();
+
+  const [isRunning,  setIsRunning]  = useState(saved.isRunning  ?? false);
+  const [startedAt,  setStartedAt]  = useState(saved.startedAt  ?? null);
+  const [accSeconds, setAccSeconds] = useState(saved.accSeconds ?? 0);
+  const [, setTick] = useState(0);
+  const savingRef = useRef(false);
+
+  // Tick every second when running
+  useEffect(() => {
+    if (!isRunning) return;
+    const id = setInterval(() => setTick(n => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [isRunning]);
+
+  // Persist to localStorage on every state change
+  useEffect(() => {
+    localStorage.setItem(LS_KEY, JSON.stringify({ isRunning, startedAt, accSeconds, date: today() }));
+  }, [isRunning, startedAt, accSeconds]);
+
+  // Save to Supabase when tab/window closes (if running)
+  useEffect(() => {
+    function handleUnload() {
+      if (!isRunning || !startedAt) return;
+      const sessionSecs = Math.floor((Date.now() - startedAt) / 1000);
+      const total = accSeconds + sessionSecs;
+      localStorage.setItem(LS_KEY, JSON.stringify({ isRunning: true, startedAt, accSeconds: total }));
+    }
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [isRunning, startedAt, accSeconds]);
+
+  const currentSeconds = Math.floor(
+    accSeconds + (isRunning && startedAt ? (Date.now() - startedAt) / 1000 : 0)
+  );
+
+  // courseName is optional — passed through to Supabase for friend visibility
+  const start = useCallback((courseName = '') => {
+    setStartedAt(Date.now());
+    setIsRunning(true);
+    if (userId) {
+      supabase.from('profiles').update({
+        session_active: true,
+        session_course_name: courseName,
+        session_started_at: new Date().toISOString(),
+      }).eq('id', userId).then(() => {});
+    }
+  }, [userId]);
+
+  const stop = useCallback(async () => {
+    if (!isRunning || !startedAt || savingRef.current) return;
+    savingRef.current = true;
+
+    const sessionSecs   = Math.floor((Date.now() - startedAt) / 1000);
+    const newAccSeconds = accSeconds + sessionSecs;
+
+    setIsRunning(false);
+    setStartedAt(null);
+    setAccSeconds(newAccSeconds);
+
+    const sessionClear = {
+      session_active: false,
+      session_course_name: '',
+      session_started_at: '',
+    };
+
+    if (userId) {
+      if (sessionSecs >= 5) {
+        const creditsEarned = Math.ceil(sessionSecs / 60);
+        const minsStudied   = Math.ceil(sessionSecs / 60);
+
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('credits, weekly_studied_minutes')
+          .eq('id', userId)
+          .single();
+
+        if (prof) {
+          await supabase.from('profiles').update({
+            ...sessionClear,
+            credits:                (prof.credits               || 0) + creditsEarned,
+            weekly_studied_minutes: (prof.weekly_studied_minutes || 0) + minsStudied,
+          }).eq('id', userId);
+          onStopped?.();
+        } else {
+          await supabase.from('profiles').update(sessionClear).eq('id', userId);
+        }
+      } else {
+        // Session too short for credits — still clear live status
+        await supabase.from('profiles').update(sessionClear).eq('id', userId);
+      }
+    }
+
+    savingRef.current = false;
+  }, [isRunning, startedAt, accSeconds, userId, onStopped]);
+
+  const resetDay = useCallback(() => {
+    setIsRunning(false);
+    setStartedAt(null);
+    setAccSeconds(0);
+    localStorage.removeItem(LS_KEY);
+  }, []);
+
+  return { isRunning, currentSeconds, start, stop, resetDay };
+}
+
+export function formatTime(totalSeconds) {
+  const s  = Math.max(0, totalSeconds);
+  const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
