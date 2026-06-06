@@ -11,6 +11,7 @@ import Avatar from './pages/Avatar';
 import Schedule from './pages/Schedule';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import LandingPage from './pages/LandingPage';
 import AvatarOnboarding from './components/AvatarOnboarding';
 
 const PAGE_MAP = {
@@ -26,13 +27,14 @@ export default function App() {
   const { user, profile, loading, updateProfile } = useAuth();
   const { dataLoading } = useData();
   const [page, setPage]         = useState('dashboard');
-  const [authView, setAuthView] = useState('login');
+  const [authView, setAuthView] = useState('landing');
 
   if (loading || (user && dataLoading)) {
     return <div className="auth-loading"><div className="auth-spinner"/></div>;
   }
 
   if (!user) {
+    if (authView === 'landing') return <LandingPage onSignup={() => setAuthView('signup')}/>;
     return authView === 'login'
       ? <Login onSwitchToSignup={() => setAuthView('signup')}/>
       : <Signup onSwitchToLogin={() => setAuthView('login')}/>;
