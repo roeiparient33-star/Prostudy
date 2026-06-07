@@ -2891,6 +2891,57 @@ select:focus-visible {
   font-weight: 600;
 }
 
+/* ─── BOTTOM NAV (mobile) ────────────────────── */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--sidebar-bg);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    gap: 0;
+  }
+
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 4px;
+    background: none;
+    border: none;
+    color: var(--sidebar-muted);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: color 0.15s;
+    min-height: 48px;
+  }
+
+  .bottom-nav-item.active {
+    color: var(--sidebar-accent);
+  }
+
+  .bottom-nav-item.active .bottom-nav-icon {
+    filter: drop-shadow(0 0 6px rgba(255,101,36,0.5));
+  }
+
+  .bottom-nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    font-family: var(--font);
+  }
+}
+
 /* ─── RESPONSIVE ─────────────────────────────── */
 @media (max-width: 1100px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -2901,6 +2952,7 @@ select:focus-visible {
   :root { --sidebar-w: 0px; }
   .sidebar { display: none; }
   .main-wrapper { margin-right: 0; }
+  .main-content { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .courses-mini-grid { grid-template-columns: 1fr; }
   .achievements-mini-grid { grid-template-columns: repeat(3, 1fr); }

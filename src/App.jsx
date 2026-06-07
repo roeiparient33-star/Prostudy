@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { useData } from './contexts/DataContext';
 import Sidebar from './components/Sidebar';
+import BottomNav from './components/BottomNav';
 import Topbar from './components/Topbar';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Courses';
@@ -67,6 +68,7 @@ export default function App() {
           <Page key={page} onNavigate={setPage}/>
         </main>
       </div>
+      <BottomNav currentPage={page} onNavigate={setPage}/>
     </div>
   );
 }
