@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext';
 import { useData } from './contexts/DataContext';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
+import MobileTimerBar from './components/MobileTimerBar';
 import Topbar from './components/Topbar';
 import Dashboard from './pages/Dashboard';
 import Courses from './pages/Courses';
@@ -68,6 +69,7 @@ export default function App() {
           <Page key={page} onNavigate={setPage}/>
         </main>
       </div>
+      <MobileTimerBar/>
       <BottomNav currentPage={page} onNavigate={setPage}/>
     </div>
   );

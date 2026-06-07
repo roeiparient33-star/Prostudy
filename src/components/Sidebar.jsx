@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { LayoutDashboard, BookOpen, CheckSquare, Users, GraduationCap, LogOut, Smile, CalendarDays, Play, Square, Settings2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
-import { useStudyTimer, formatTime } from '../hooks/useStudyTimer';
+import { useTimer, formatTime } from '../contexts/TimerContext';
 
 const navItems = [
   { id: 'dashboard', label: 'דשבורד',       icon: LayoutDashboard },
@@ -14,9 +14,9 @@ const navItems = [
 ];
 
 export default function Sidebar({ currentPage, onNavigate }) {
-  const { profile, signOut, user, refreshProfile } = useAuth();
+  const { profile, signOut } = useAuth();
   const { courses } = useData();
-  const { isRunning, currentSeconds, start, stop } = useStudyTimer(user?.id, refreshProfile);
+  const { isRunning, currentSeconds, start, stop } = useTimer();
 
   // ── Custom session timer ──────────────────────────────────────────────────
   const [timerMode,        setTimerMode]        = useState(false);   // false = regular stopwatch

@@ -2891,6 +2891,88 @@ select:focus-visible {
   font-weight: 600;
 }
 
+/* ─── MOBILE TIMER BAR ───────────────────────── */
+.mobile-timer-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-timer-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    z-index: 99;
+    background: var(--sidebar-bg);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding: 8px 16px;
+  }
+
+  .mobile-timer-bar.running {
+    border-top-color: rgba(255,101,36,0.35);
+    background: linear-gradient(to right, rgba(255,101,36,0.08), var(--sidebar-bg));
+  }
+
+  .mobile-timer-course {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-sm);
+    color: var(--sidebar-text);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 5px 8px;
+    min-width: 0;
+  }
+
+  .mobile-timer-course-pill {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sidebar-accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-timer-time {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--sidebar-accent);
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+
+  .mobile-timer-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .mobile-timer-btn.start {
+    background: var(--sidebar-accent);
+    color: white;
+  }
+
+  .mobile-timer-btn.stop {
+    background: rgba(241,64,64,0.15);
+    color: #F14040;
+    border: 1px solid rgba(241,64,64,0.25);
+  }
+}
+
 /* ─── BOTTOM NAV (mobile) ────────────────────── */
 .bottom-nav {
   display: none;
@@ -2952,7 +3034,7 @@ select:focus-visible {
   :root { --sidebar-w: 0px; }
   .sidebar { display: none; }
   .main-wrapper { margin-right: 0; }
-  .main-content { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .main-content { padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .courses-mini-grid { grid-template-columns: 1fr; }
   .achievements-mini-grid { grid-template-columns: repeat(3, 1fr); }
