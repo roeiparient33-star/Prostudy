@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
-import { supabase } from './lib/supabase';
 import { useData } from './contexts/DataContext';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
@@ -37,26 +36,17 @@ const PAGE_MAP = {
 };
 
 export default function App() {
-  const { user, profile, loading, updateProfile } = useAuth();
+  const { user, profile, loading, updateProfile, isRecovery, clearRecovery } = useAuth();
   const { dataLoading } = useData();
-  const [page, setPage]               = useState('dashboard');
-  const [authView, setAuthView]       = useState('landing');
-  const [showReset, setShowReset]     = useState(false);
-
-  // Detect Supabase password-recovery redirect
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setShowReset(true);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  const [page, setPage]         = useState('dashboard');
+  const [authView, setAuthView] = useState('landing');
 
   if (loading || (user && dataLoading)) {
     return <div className="auth-loading"><div className="auth-spinner"/></div>;
   }
 
-  if (showReset) {
-    return <ResetPassword onDone={() => setShowReset(false)} />;
+  if (isRecovery) {
+    return <ResetPassword onDone={clearRecovery} />;
   }
 
   if (!user) {

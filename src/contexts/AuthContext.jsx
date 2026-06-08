@@ -12,9 +12,10 @@ function getWeekKey() {
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser]           = useState(null);
+  const [profile, setProfile]     = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [isRecovery, setRecovery] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -24,6 +25,13 @@ export function AuthProvider({ children }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'PASSWORD_RECOVERY') {
+        // Show reset-password screen instead of normal app
+        setUser(session?.user ?? null);
+        setRecovery(true);
+        setLoading(false);
+        return;
+      }
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
       else { setActiveUser(''); setProfile(null); setLoading(false); }
@@ -123,6 +131,8 @@ export function AuthProvider({ children }) {
       user,
       profile,
       loading,
+      isRecovery,
+      clearRecovery: () => setRecovery(false),
       signUp,
       signIn,
       signOut,
