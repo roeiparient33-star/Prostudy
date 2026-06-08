@@ -67,6 +67,8 @@ body {
   background: var(--bg-main);
   color: var(--text);
   min-height: 100vh;
+  min-height: 100dvh;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -76,10 +78,12 @@ body {
   display: flex;
   flex-direction: row;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .main-wrapper {
   flex: 1;
+  min-height: 0;
   margin-right: var(--sidebar-w);
   display: flex;
   flex-direction: column;
