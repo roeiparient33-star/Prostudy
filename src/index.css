@@ -3815,25 +3815,22 @@ select:focus-visible {
   animation: tourPulse 2s ease-in-out infinite;
 }
 
-/* Speech bubble */
+/* Speech bubble — always centered, never moves */
 .tour-bubble {
   position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(340px, calc(100vw - 32px));
   background: #fff;
-  border-radius: 18px;
-  padding: 18px 20px 14px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,101,36,0.12);
+  border-radius: 20px;
+  padding: 20px 22px 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,101,36,0.12);
   z-index: 70;
   direction: rtl;
 }
 .tour-bubble-enter {
   animation: tourSlideUp 200ms ease;
-}
-
-/* Arrow (CSS triangle) */
-.tour-arrow {
-  position: absolute;
-  width: 0;
-  height: 0;
 }
 
 /* Head: avatar + title + progress */

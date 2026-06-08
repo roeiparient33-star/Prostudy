@@ -48,7 +48,7 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
       .insert({ name: name.trim(), target_hours_per_week: target, creator_id: userId })
       .select()
       .single();
-    if (error || !pact) { setErr('שגיאה ביצירת הברית'); setSaving(false); return; }
+    if (error || !pact) { setErr('שגיאה ביצירת הצוות'); setSaving(false); return; }
     // Insert creator first so RLS passes, then each friend
     await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: userId });
     for (const fid of selectedIds) {
@@ -64,13 +64,13 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
         <div className="modal-box">
           <div className="modal-head">
             <span className="modal-head-title" style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <Handshake size={17} color="var(--purple)"/> ברית לימוד חדשה
+              <Handshake size={17} color="var(--purple)"/> צוות למידה חדש
             </span>
             <button className="modal-close-btn" onClick={onClose} aria-label="סגור"><X size={17}/></button>
           </div>
           <form onSubmit={handleCreate} className="modal-form">
             <div className="modal-field">
-              <label className="modal-label">שם הברית</label>
+              <label className="modal-label">שם הצוות</label>
               <input className="modal-input" value={name} onChange={e=>setName(e.target.value)} placeholder="לדוגמה: נוכחות מושלמת" autoFocus/>
             </div>
             <div className="modal-field">
@@ -79,7 +79,7 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
             </div>
             <div className="modal-field">
               <label className="modal-label">
-                חברים לברית
+                חברים לצוות
                 {selectedIds.length > 0 && (
                   <span style={{ marginRight:6, fontWeight:500, color:'var(--accent)', fontSize:12 }}>
                     ({selectedIds.length} נבחרו)
@@ -109,7 +109,7 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
             {err && <div className="auth-error">{err}</div>}
             <div className="modal-actions">
               <button type="submit" className="modal-btn-primary" disabled={saving || !name.trim() || selectedIds.length === 0}>
-                {saving ? 'יוצר...' : `צור ברית${selectedIds.length > 1 ? ` (${selectedIds.length + 1} חברים)` : ''}`}
+                {saving ? 'פותח...' : `פתח צוות${selectedIds.length > 1 ? ` (${selectedIds.length + 1} חברים)` : ''}`}
               </button>
               <button type="button" className="modal-btn-ghost" onClick={onClose}>ביטול</button>
             </div>
@@ -172,7 +172,7 @@ function PactCard({ pact, userId, onLeave, onTasksChanged }) {
           <div className="pact-card-target">יעד: {pact.target_hours_per_week} שע׳ / שבוע</div>
         </div>
         {isCreator && (
-          <button className="friend-btn friend-btn-reject" onClick={onLeave} aria-label="סגור ברית" title="סגור ברית">
+          <button className="friend-btn friend-btn-reject" onClick={onLeave} aria-label="עזוב צוות" title="עזוב צוות">
             <X size={14}/>
           </button>
         )}
@@ -203,7 +203,7 @@ function PactCard({ pact, userId, onLeave, onTasksChanged }) {
       {/* Tasks section */}
       <div className="pact-tasks-section">
         <div className="pact-tasks-header">
-          <span className="pact-tasks-title">משימות הברית</span>
+          <span className="pact-tasks-title">משימות הצוות</span>
           {isCreator && !addingTask && (
             <button className="pact-add-task-btn" onClick={() => setAddingTask(true)} aria-label="הוסף משימה">
               <Plus size={13}/> הוסף
@@ -233,7 +233,7 @@ function PactCard({ pact, userId, onLeave, onTasksChanged }) {
         {/* Task list */}
         {tasks.length === 0 && !addingTask ? (
           <div className="pact-tasks-empty">
-            {isCreator ? 'לחץ "+ הוסף" כדי להוסיף משימות לברית' : 'אין משימות עדיין'}
+            {isCreator ? 'לחץ "+ הוסף" כדי להוסיף משימות לצוות' : 'אין משימות עדיין'}
           </div>
         ) : (
           <div className="pact-task-list">
@@ -625,22 +625,22 @@ export default function Friends() {
         <div className="section-header" style={{ marginBottom: pacts.length > 0 ? 14 : 0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <Target size={16} color="var(--purple)" aria-hidden="true"/>
-            <span className="section-title">ברית לימוד</span>
+            <span className="section-title">צוות למידה</span>
           </div>
           {friendObjs.length > 0 && (
-            <button className="friend-btn friend-btn-add" data-tour="pact-create-btn" onClick={() => setShowPactModal(true)} aria-label="צור ברית לימוד חדשה">
-              <Plus size={13}/> ברית חדשה
+            <button className="friend-btn friend-btn-add" data-tour="pact-create-btn" onClick={() => setShowPactModal(true)} aria-label="פתח צוות למידה חדש">
+              <Plus size={13}/> צוות חדש
             </button>
           )}
         </div>
         {pacts.length === 0 ? (
           <div className="friends-empty" style={{ padding:'20px 0' }}>
             <Handshake size={36} color="var(--text-3)" aria-hidden="true"/>
-            <div className="friends-empty-text">אין ברית לימוד פעילה</div>
+            <div className="friends-empty-text">אין צוות למידה פעיל</div>
             <div className="friends-empty-sub">
               {friendObjs.length === 0
-                ? 'הוסף חבר כדי ליצור ברית לימוד'
-                : 'צור ברית עם חבר ולמדו יחד לקראת יעד משותף'}
+                ? 'הוסף חבר כדי לפתוח צוות למידה'
+                : 'פתח צוות עם חבר ולמדו יחד לקראת יעד משותף'}
             </div>
           </div>
         ) : (

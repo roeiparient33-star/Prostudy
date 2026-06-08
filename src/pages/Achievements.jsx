@@ -51,7 +51,7 @@ const ACHIEVEMENTS = [
   { id:'invited_friend', title:'שגריר פרוסטאדי',   desc:'הזמן חבר שנרשם לאפליקציה', icon:'🌟', rarity:'uncommon',  cat:'social',
     check:({ic})   => ic>=1,
     prog: ({ic})   => ({ cur:Math.min(1,ic||0), tot:1 }) },
-  { id:'pact_creator',   title:'ברית לימוד',        desc:'צור ברית לימוד עם חבר',     icon:'🤝', rarity:'uncommon',  cat:'social',
+  { id:'pact_creator',   title:'צוות למידה',        desc:'פתח צוות למידה עם חבר',     icon:'🤝', rarity:'uncommon',  cat:'social',
     check:({hasPact}) => hasPact,
     prog: ({hasPact}) => ({ cur:hasPact?1:0, tot:1 }) },
   { id:'week_200',       title:'שבוע שיא',          desc:'למד 200 דקות (3.3 שע׳) בשבוע', icon:'📅', rarity:'common', cat:'dedication',
