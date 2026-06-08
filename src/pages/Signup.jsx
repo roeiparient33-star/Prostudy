@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GraduationCap, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import PasswordInput from '../components/PasswordInput';
 
 export default function Signup({ onSwitchToLogin }) {
   const { signUp } = useAuth();
@@ -78,15 +79,11 @@ export default function Signup({ onSwitchToLogin }) {
 
           <div className="auth-field">
             <label className="auth-label">סיסמה</label>
-            <input
-              className="auth-input"
-              type="password"
-              placeholder="לפחות 6 תווים"
+            <PasswordInput
               value={password}
               onChange={e => setPassword(e.target.value)}
-              required
+              placeholder="לפחות 6 תווים"
               autoComplete="new-password"
-              dir="ltr"
             />
           </div>
 

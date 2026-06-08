@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GraduationCap, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import PasswordInput from '../components/PasswordInput';
 
 export default function Login({ onSwitchToSignup }) {
   const { signIn, sendPasswordReset } = useAuth();
@@ -140,15 +141,10 @@ export default function Login({ onSwitchToSignup }) {
                 שכחת סיסמה?
               </button>
             </label>
-            <input
-              className="auth-input"
-              type="password"
-              placeholder="••••••••"
+            <PasswordInput
               value={password}
               onChange={e => setPassword(e.target.value)}
-              required
               autoComplete="current-password"
-              dir="ltr"
             />
           </div>
 

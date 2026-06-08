@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GraduationCap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import PasswordInput from '../components/PasswordInput';
 
 export default function ResetPassword({ onDone }) {
   const { updatePassword } = useAuth();
@@ -45,27 +46,19 @@ export default function ResetPassword({ onDone }) {
             <form className="auth-form" onSubmit={handleSubmit}>
               <div className="auth-field">
                 <label className="auth-label">סיסמה חדשה</label>
-                <input
-                  className="auth-input"
-                  type="password"
-                  placeholder="לפחות 6 תווים"
+                <PasswordInput
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  required
-                  autoFocus
-                  dir="ltr"
+                  placeholder="לפחות 6 תווים"
+                  autoComplete="new-password"
                 />
               </div>
               <div className="auth-field">
                 <label className="auth-label">אשר סיסמה</label>
-                <input
-                  className="auth-input"
-                  type="password"
-                  placeholder="••••••••"
+                <PasswordInput
                   value={confirm}
                   onChange={e => setConfirm(e.target.value)}
-                  required
-                  dir="ltr"
+                  autoComplete="new-password"
                 />
               </div>
 

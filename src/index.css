@@ -2773,7 +2773,36 @@ select:focus-visible {
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
+
+/* Password input with show/hide toggle */
+.auth-password-wrap {
+  position: relative;
+  width: 100%;
+}
+.auth-input-password {
+  padding-left: 44px !important; /* room for the eye icon (LTR input) */
+}
+.auth-password-toggle {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 150ms;
+  line-height: 0;
+}
+.auth-password-toggle:hover { color: var(--text-2); }
 
 .auth-input {
   width: 100%;
