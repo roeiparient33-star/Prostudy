@@ -447,7 +447,7 @@ export default function Friends() {
         <p style={{ fontSize:13, color:'var(--text-2)', marginBottom:14, lineHeight:1.65 }}>
           שתף את הקישור האישי שלך — כשחבר נרשם דרכו, שניכם מקבלים קרדיטים!
         </p>
-        <div className="invite-link-row">
+        <div className="invite-link-row" data-tour="invite-link">
           <div className="invite-link-box" dir="ltr" aria-label="קישור הזמנה אישי">
             {profile?.invite_code ? `${APP_URL}?ref=${profile.invite_code}` : 'טוען קישור...'}
           </div>
@@ -628,7 +628,7 @@ export default function Friends() {
             <span className="section-title">ברית לימוד</span>
           </div>
           {friendObjs.length > 0 && (
-            <button className="friend-btn friend-btn-add" onClick={() => setShowPactModal(true)} aria-label="צור ברית לימוד חדשה">
+            <button className="friend-btn friend-btn-add" data-tour="pact-create-btn" onClick={() => setShowPactModal(true)} aria-label="צור ברית לימוד חדשה">
               <Plus size={13}/> ברית חדשה
             </button>
           )}

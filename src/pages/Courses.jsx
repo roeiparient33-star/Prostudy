@@ -40,7 +40,7 @@ export default function Courses() {
             {courses.length > 0 ? `${courses.length} קורסים פעילים בסמסטר` : 'הוסף את הקורסים שלך לסמסטר'}
           </p>
         </div>
-        <button className="page-add-btn" onClick={() => setShowModal(true)}>
+        <button className="page-add-btn" data-tour="courses-add-btn" onClick={() => setShowModal(true)}>
           <Plus size={15}/> הוסף קורס
         </button>
       </div>

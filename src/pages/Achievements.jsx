@@ -155,7 +155,7 @@ export default function Achievements() {
       {unlocked.length > 0 && (
         <div style={{marginBottom:32}}>
           <div className="achievements-section-title"><span>✨</span><span>הושגו ({unlocked.length})</span></div>
-          <div className="achievements-grid">
+          <div className="achievements-grid" data-tour="achievements-grid">
             {unlocked.map(a => {
               const gc = RARITY_GLOW[a.rarity] ?? '#9CA3AF';
               return (

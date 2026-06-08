@@ -69,7 +69,7 @@ export default function Tasks() {
             </span>
           )}
         </div>
-        <button className="page-add-btn" onClick={() => setShowModal(true)}>
+        <button className="page-add-btn" data-tour="tasks-add-btn" onClick={() => setShowModal(true)}>
           <Plus size={15}/> הוסף משימה
         </button>
       </div>

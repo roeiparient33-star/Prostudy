@@ -58,6 +58,7 @@ export default function Dashboard({ onNavigate }) {
           {streakCurrent > 0 && (
             <button
               className="db-streak-badge"
+              data-tour="streak-badge"
               onClick={() => onNavigate('achievements')}
               title={`שיא: ${streakBest} ימים`}
             >
@@ -70,7 +71,7 @@ export default function Dashboard({ onNavigate }) {
       </div>
 
       {/* Stats */}
-      <div className="db-stats enter-stagger">
+      <div className="db-stats enter-stagger" data-tour="stats-grid">
         {stats.map((s, i) => (
           <div className="db-stat" key={i}>
             <div className="db-stat-top">

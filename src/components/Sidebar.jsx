@@ -132,7 +132,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
       <div className="sidebar-divider"/>
 
       {/* Study Timer */}
-      <div className="sidebar-timer">
+      <div className="sidebar-timer" data-tour="study-timer">
 
         {/* ── Header ──────────────────────────────────────── */}
         <div className="sidebar-timer-label">שעון לימוד</div>
@@ -148,6 +148,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
             </button>
             <button
               className={`timer-mode-pill${timerMode ? ' active' : ''}`}
+              data-tour="pomodoro-toggle"
               onClick={() => !timerMode && toggleTimerMode()}
             >
               פומודורו

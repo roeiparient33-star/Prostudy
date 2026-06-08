@@ -16,6 +16,8 @@ import Signup from './pages/Signup';
 import LandingPage from './pages/LandingPage';
 import AvatarOnboarding from './components/AvatarOnboarding';
 import Achievements from './pages/Achievements';
+import OnboardingTour from './onboarding/OnboardingTour';
+import HelpButton from './onboarding/HelpButton';
 
 // Capture referral code from URL on app load
 const urlRef = new URLSearchParams(window.location.search).get('ref');
@@ -67,16 +69,20 @@ export default function App() {
   const { component: Page, title } = PAGE_MAP[page] ?? PAGE_MAP.dashboard;
 
   return (
-    <div className="app-layout">
-      <Sidebar currentPage={page} onNavigate={setPage}/>
-      <div className="main-wrapper">
-        <Topbar title={title}/>
-        <main className="main-content">
-          <Page key={page} onNavigate={setPage}/>
-        </main>
+    <>
+      <div className="app-layout">
+        <Sidebar currentPage={page} onNavigate={setPage}/>
+        <div className="main-wrapper">
+          <Topbar title={title}/>
+          <main className="main-content">
+            <Page key={page} onNavigate={setPage}/>
+          </main>
+        </div>
+        <MobileTimerBar/>
+        <BottomNav currentPage={page} onNavigate={setPage}/>
       </div>
-      <MobileTimerBar/>
-      <BottomNav currentPage={page} onNavigate={setPage}/>
-    </div>
+      <OnboardingTour page={page} setPage={setPage}/>
+      <HelpButton page={page}/>
+    </>
   );
 }

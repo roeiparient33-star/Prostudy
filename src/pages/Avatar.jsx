@@ -134,7 +134,7 @@ export default function Avatar() {
 
       <div className="av-layout">
         {/* ── Preview panel ── */}
-        <div className="av-preview-col">
+        <div className="av-preview-col" data-tour="avatar-preview">
           <div className="card av-preview-card">
             <div className="av-preview-frame">
               {cfg.baseSelected
