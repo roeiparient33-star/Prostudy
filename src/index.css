@@ -4163,16 +4163,9 @@ select:focus-visible {
   z-index: 50;
   background: rgba(0,0,0,0.35);
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  padding: 0 16px 96px;
-}
-@media (min-width: 769px) {
-  .help-overlay {
-    align-items: flex-end;
-    justify-content: flex-start;
-    padding: 0 0 40px 80px;
-  }
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
 .help-panel {
   background: #fff;
