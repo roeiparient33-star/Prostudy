@@ -66,7 +66,7 @@ export default function PWAInstallBanner() {
       {/* App icon + title */}
       <div className="pwa-banner-head">
         <div className="pwa-banner-icon">
-          <img src="/icons/icon-192.png" alt="ProStudy" onError={e => e.target.style.display='none'} />
+          <img src="/logo.png" alt="ProStudy" onError={e => e.target.style.display='none'} />
           <span className="pwa-banner-icon-fallback">PS</span>
         </div>
         <div>
