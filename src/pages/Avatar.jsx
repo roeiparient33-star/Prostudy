@@ -32,10 +32,13 @@ export default function Avatar() {
   const [presetsPurchased, setPresetsP]   = useState(profile?.presets_purchased || []);
   const [credits, setCredits]             = useState(profile?.credits           || 0);
 
-  const [tab, setTab]         = useState('base');
-  const [shopCat, setShopCat] = useState('head');
-  const [hoverPreview, setHoverPreview] = useState(null); // { cfg, purchased }
-  const [saving, setSaving]   = useState(false);
+  const [tab, setTab]           = useState('base');
+  const [shopCat, setShopCat]   = useState('head');
+  const [hoverPreview, setHoverPreview] = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [showAllPresets, setShowAllPresets] = useState(false);
+
+  const PRESETS_INITIAL = 6;
 
   useEffect(() => {
     if (profile) {
@@ -164,42 +167,55 @@ export default function Avatar() {
           </div>
 
           {/* Base presets */}
-          {tab === 'base' && (
-            <div className="av-presets-grid">
-              {ALL_PRESET_SVGS.map((src, i) => {
-                const owned     = presetsPurchased.includes(i);
-                const active    = cfg.presetId === i && cfg.baseSelected;
-                const cost      = PRESET_COSTS[i];
-                const canAfford = credits >= cost;
-                return (
-                  <div key={i} className={`av-preset-card${active?' active':''}`}>
-                    <div className="av-preset-img-wrap">
-                      <img src={src} alt={PRESET_NAMES[i]} className="av-preset-img"/>
-                      {!owned && <div className="av-preset-lock">🔒</div>}
-                      {isPremiumPreset(i) && (
-                        <div style={{position:'absolute',top:6,right:6,background:'var(--yellow)',color:'white',fontSize:9,fontWeight:800,padding:'2px 6px',borderRadius:4,letterSpacing:0.3}}>
-                          PREMIUM
+          {tab === 'base' && (() => {
+            const visiblePresets = showAllPresets
+              ? ALL_PRESET_SVGS
+              : ALL_PRESET_SVGS.slice(0, PRESETS_INITIAL);
+            const hasMore = ALL_PRESET_SVGS.length > PRESETS_INITIAL;
+            return (
+              <>
+                <div className="av-presets-grid">
+                  {visiblePresets.map((src, i) => {
+                    const owned     = presetsPurchased.includes(i);
+                    const active    = cfg.presetId === i && cfg.baseSelected;
+                    const cost      = PRESET_COSTS[i];
+                    const canAfford = credits >= cost;
+                    return (
+                      <div key={i} className={`av-preset-card${active?' active':''}`}>
+                        <div className="av-preset-img-wrap">
+                          <img src={src} alt={PRESET_NAMES[i]} className="av-preset-img"/>
+                          {!owned && <div className="av-preset-lock">🔒</div>}
                         </div>
-                      )}
-                    </div>
-                    {owned
-                      ? <>
-                          {presetsPurchased[0] === i && (
-                            <div style={{fontSize:10,color:'var(--green)',fontWeight:700,marginBottom:4}}>🎁 חינם</div>
-                          )}
-                          <button className={`av-preset-btn${active?' av-preset-btn-active':''}`} onClick={()=>selectPreset(i)}>
-                            {active ? '✓ נבחר' : 'בחר'}
-                          </button>
-                        </>
-                      : <button className="av-preset-btn av-preset-btn-buy" onClick={()=>buyPreset(i)} disabled={!canAfford}>
-                          💰 {cost} קרדיטים
-                        </button>
-                    }
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                        {owned
+                          ? <>
+                              {presetsPurchased[0] === i && (
+                                <div style={{fontSize:10,color:'var(--green)',fontWeight:700,marginBottom:4}}>חינם</div>
+                              )}
+                              <button className={`av-preset-btn${active?' av-preset-btn-active':''}`} onClick={()=>selectPreset(i)}>
+                                {active ? '✓ נבחר' : 'בחר'}
+                              </button>
+                            </>
+                          : <button className="av-preset-btn av-preset-btn-buy" onClick={()=>buyPreset(i)} disabled={!canAfford}>
+                              {cost} קרדיטים
+                            </button>
+                        }
+                      </div>
+                    );
+                  })}
+                </div>
+                {hasMore && (
+                  <button
+                    className="av-show-more-btn"
+                    onClick={() => setShowAllPresets(p => !p)}
+                  >
+                    {showAllPresets
+                      ? '▲ הסתר'
+                      : `ראה עוד (${ALL_PRESET_SVGS.length - PRESETS_INITIAL} נוספות)`}
+                  </button>
+                )}
+              </>
+            );
+          })()}
 
           {/* Shop */}
           {tab === 'shop' && (
