@@ -32,18 +32,41 @@ export function useStudyTimer(userId, onStopped) {
     return () => clearInterval(id);
   }, [isRunning]);
 
-  // Auto-stop: check every minute for midnight crossing or 8h cap
+  // Auto-stop + midnight reset: check every minute
   useEffect(() => {
     if (!isRunning || !startedAt) return;
-    const id = setInterval(() => {
+    const id = setInterval(async () => {
       const sessionSecs = Math.floor((Date.now() - startedAt) / 1000);
       const dayChanged  = today() !== startDay(startedAt);
       if (dayChanged || sessionSecs >= MAX_SESSION_SECS) {
-        stopRef.current?.();
+        await stopRef.current?.();
+        if (dayChanged) {
+          // New day — reset the display counter to 0
+          setAccSeconds(0);
+          localStorage.setItem(LS_KEY, JSON.stringify({
+            isRunning: false, startedAt: null, accSeconds: 0, date: today(),
+          }));
+        }
       }
     }, 60000);
     return () => clearInterval(id);
   }, [isRunning, startedAt]);
+
+  // Reset display when day changes while page is open but timer is stopped
+  useEffect(() => {
+    if (isRunning) return;
+    const id = setInterval(() => {
+      const saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+      if (saved.date && saved.date !== today()) {
+        setAccSeconds(0);
+        setStartedAt(null);
+        localStorage.setItem(LS_KEY, JSON.stringify({
+          isRunning: false, startedAt: null, accSeconds: 0, date: today(),
+        }));
+      }
+    }, 60000);
+    return () => clearInterval(id);
+  }, [isRunning]);
 
   // Persist to localStorage on every state change
   useEffect(() => {
