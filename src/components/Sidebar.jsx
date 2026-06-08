@@ -138,100 +138,139 @@ export default function Sidebar({ currentPage, onNavigate }) {
       {/* Study Timer */}
       <div className="sidebar-timer">
 
-        {/* Label row + mode toggle */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
-          <div className="sidebar-timer-label">{timerLabel}</div>
-          <div style={{ display:'flex', gap:4 }}>
-            {/* Settings gear — only when stopped */}
-            {!isRunning && timerMode && (
-              <button
-                className={`pomodoro-toggle${showSettings ? ' active' : ''}`}
-                onClick={() => setShowSettings(p => !p)}
-                title="הגדר זמנים"
-              >
-                <Settings2 size={12}/>
-              </button>
-            )}
-            {/* Mode toggle */}
+        {/* ── Header ──────────────────────────────────────── */}
+        <div className="sidebar-timer-label">שעון לימוד</div>
+
+        {/* ── Mode switcher — only when stopped ────────────── */}
+        {!isRunning && !showBreakMsg && (
+          <div className="timer-mode-row">
             <button
-              className={`pomodoro-toggle${timerMode ? ' active' : ''}`}
-              onClick={toggleTimerMode}
-              title={timerMode ? 'עבור לשעון רגיל' : 'הפעל שעון עם הפסקות'}
-              disabled={isRunning}
+              className={`timer-mode-pill${!timerMode ? ' active' : ''}`}
+              onClick={() => timerMode && toggleTimerMode()}
             >
-              ⏱
+              חופשי
+            </button>
+            <button
+              className={`timer-mode-pill${timerMode ? ' active' : ''}`}
+              onClick={() => !timerMode && toggleTimerMode()}
+            >
+              פומודורו
             </button>
           </div>
-        </div>
+        )}
 
-        {/* Inline settings panel */}
-        {showSettings && !isRunning && timerMode && (
-          <div className="timer-settings-panel">
-            <div className="timer-settings-row">
-              <label>לימוד (דק׳)</label>
-              <input
-                type="number" min={1} max={120}
-                value={workMins}
-                onChange={e => setWorkMins(Math.max(1, Number(e.target.value)))}
-                className="timer-settings-input"
-              />
+        {/* ── Pomodoro presets — only when stopped in pomodoro mode ── */}
+        {timerMode && !isRunning && !showBreakMsg && (
+          <div className="timer-presets-wrap">
+            <div className="timer-preset-row">
+              <span className="timer-preset-label">לימוד</span>
+              {[15, 25, 45].map(m => (
+                <button
+                  key={m}
+                  className={`timer-preset-btn${workMins === m ? ' active' : ''}`}
+                  onClick={() => setWorkMins(m)}
+                >
+                  {m}′
+                </button>
+              ))}
             </div>
-            <div className="timer-settings-row">
-              <label>הפסקה (דק׳)</label>
-              <input
-                type="number" min={1} max={60}
-                value={breakMins}
-                onChange={e => setBreakMins(Math.max(1, Number(e.target.value)))}
-                className="timer-settings-input"
-              />
+            <div className="timer-preset-row">
+              <span className="timer-preset-label">הפסקה</span>
+              {[5, 10, 15].map(m => (
+                <button
+                  key={m}
+                  className={`timer-preset-btn${breakMins === m ? ' active' : ''}`}
+                  onClick={() => setBreakMins(m)}
+                >
+                  {m}′
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Break message */}
+        {/* ── Phase badge — during Pomodoro ──────────────────── */}
+        {timerMode && (isRunning || showBreakMsg) && (
+          <div className={`timer-phase-badge${timerPhase === 'break' ? ' break' : ''}`}>
+            {timerPhase === 'work' ? 'סשן לימוד' : 'הפסקה'}
+          </div>
+        )}
+
+        {/* ── Break screen ────────────────────────────────────── */}
         {showBreakMsg && (
-          <div className="pomodoro-break-msg">
-            🎉 זמן הפסקה! {formatTime(breakLeft)}
-          </div>
+          <>
+            <div className="sidebar-timer-display break-display">
+              {formatTime(breakLeft)}
+            </div>
+            <button
+              className="sidebar-timer-btn start"
+              onClick={() => {
+                clearInterval(breakInterval.current);
+                setTimerPhase('work');
+                setShowBreakMsg(false);
+                setBreakLeft(0);
+              }}
+            >
+              <Play size={11} fill="currentColor"/> התחל סשן חדש
+            </button>
+            <button className="pomodoro-skip-btn" onClick={() => {
+              clearInterval(breakInterval.current);
+              setTimerPhase('work');
+              setShowBreakMsg(false);
+              setBreakLeft(0);
+            }}>
+              דלג על הפסקה
+            </button>
+          </>
         )}
 
-        {/* Course selector — when stopped */}
-        {!isRunning && !showBreakMsg && courses.length > 0 && (
-          <select
-            className="timer-course-select"
-            value={studyCourseId}
-            onChange={e => setStudyCourseId(e.target.value)}
-          >
-            <option value="">בחר קורס...</option>
-            {courses.map(c => (
-              <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>
-            ))}
-          </select>
-        )}
-
-        {/* Active course label — when running */}
-        {isRunning && studyCourse && (
-          <div className="timer-course-active">
-            {studyCourse.emoji} {studyCourse.name}
-          </div>
-        )}
-
-        {/* Timer display */}
-        <div className={`sidebar-timer-display${isRunning ? ' running' : ''}${timerMode && timerPhase === 'work' && isRunning ? ' pomodoro' : ''}`}>
-          {displayTime}
-        </div>
-
-        {/* Start / Stop */}
+        {/* ── Normal flow (not on break) ─────────────────────── */}
         {!showBreakMsg && (
-          <button
-            className={`sidebar-timer-btn${isRunning ? ' stop' : ' start'}`}
-            onClick={isRunning ? handleStop : handleStart}
-          >
-            {isRunning
-              ? <><Square size={11} fill="currentColor"/> עצור</>
-              : <><Play  size={11} fill="currentColor"/> התחל</>
-            }
-          </button>
+          <>
+            {/* Course selector — when stopped */}
+            {!isRunning && courses.length > 0 && (
+              <select
+                className="timer-course-select"
+                value={studyCourseId}
+                onChange={e => setStudyCourseId(e.target.value)}
+              >
+                <option value="">בחר קורס...</option>
+                {courses.map(c => (
+                  <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Active course label — when running */}
+            {isRunning && studyCourse && (
+              <div className="timer-course-active">
+                {studyCourse.emoji} {studyCourse.name}
+              </div>
+            )}
+
+            {/* Timer display */}
+            <div className={`sidebar-timer-display${isRunning ? ' running' : ''}`}>
+              {displayTime}
+            </div>
+
+            {/* Start / Stop */}
+            <button
+              className={`sidebar-timer-btn${isRunning ? ' stop' : ' start'}`}
+              onClick={isRunning ? handleStop : handleStart}
+            >
+              {isRunning
+                ? <><Square size={11} fill="currentColor"/> עצור</>
+                : <><Play  size={11} fill="currentColor"/> התחל</>
+              }
+            </button>
+
+            {/* Pomodoro progress hint — when running */}
+            {timerMode && isRunning && timerPhase === 'work' && (
+              <div className="timer-pomodoro-hint">
+                {workMins} דק׳ לימוד · {breakMins} דק׳ הפסקה
+              </div>
+            )}
+          </>
         )}
       </div>
 
