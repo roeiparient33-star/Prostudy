@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const LS_KEY = 'ps_timer_v2';
+const MAX_SESSION_SECS = 8 * 3600; // 8 שעות מקסימום לסשן אחד
 
 function today() { return new Date().toISOString().split('T')[0]; }
+function startDay(ts) { return new Date(ts).toISOString().split('T')[0]; }
 
 function loadState() {
   try {
@@ -21,6 +23,7 @@ export function useStudyTimer(userId, onStopped) {
   const [accSeconds, setAccSeconds] = useState(saved.accSeconds ?? 0);
   const [, setTick] = useState(0);
   const savingRef = useRef(false);
+  const stopRef   = useRef(null);
 
   // Tick every second when running
   useEffect(() => {
@@ -28,6 +31,19 @@ export function useStudyTimer(userId, onStopped) {
     const id = setInterval(() => setTick(n => n + 1), 1000);
     return () => clearInterval(id);
   }, [isRunning]);
+
+  // Auto-stop: check every minute for midnight crossing or 8h cap
+  useEffect(() => {
+    if (!isRunning || !startedAt) return;
+    const id = setInterval(() => {
+      const sessionSecs = Math.floor((Date.now() - startedAt) / 1000);
+      const dayChanged  = today() !== startDay(startedAt);
+      if (dayChanged || sessionSecs >= MAX_SESSION_SECS) {
+        stopRef.current?.();
+      }
+    }, 60000);
+    return () => clearInterval(id);
+  }, [isRunning, startedAt]);
 
   // Persist to localStorage on every state change
   useEffect(() => {
@@ -109,6 +125,9 @@ export function useStudyTimer(userId, onStopped) {
 
     savingRef.current = false;
   }, [isRunning, startedAt, accSeconds, userId, onStopped]);
+
+  // Keep stopRef in sync so the auto-stop interval always calls the latest version
+  useEffect(() => { stopRef.current = stop; }, [stop]);
 
   const resetDay = useCallback(() => {
     setIsRunning(false);
