@@ -61,10 +61,6 @@ html {
   font-family: var(--font);
   direction: rtl;
   font-size: 16px;
-  /* Prevent horizontal scroll on mobile */
-  overflow-x: hidden;
-  width: 100%;
-  height: 100%;
 }
 
 body {
@@ -72,13 +68,9 @@ body {
   color: var(--text);
   min-height: 100vh;
   min-height: 100dvh;
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
-  /* Prevent iOS bounce/rubber-band scroll */
+  /* clip instead of hidden — blocks horizontal overflow without breaking vertical scroll */
+  overflow-x: clip;
   overscroll-behavior: none;
-  overscroll-behavior-y: none;
-  -webkit-overflow-scrolling: touch;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -89,9 +81,7 @@ body {
   flex-direction: row;
   min-height: 100vh;
   min-height: 100dvh;
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
   position: relative;
 }
 
