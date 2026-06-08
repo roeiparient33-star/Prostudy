@@ -61,6 +61,10 @@ html {
   font-family: var(--font);
   direction: rtl;
   font-size: 16px;
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
+  width: 100%;
+  height: 100%;
 }
 
 body {
@@ -68,7 +72,13 @@ body {
   color: var(--text);
   min-height: 100vh;
   min-height: 100dvh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  /* Prevent iOS bounce/rubber-band scroll */
   overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -79,6 +89,10 @@ body {
   flex-direction: row;
   min-height: 100vh;
   min-height: 100dvh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
 }
 
 .main-wrapper {
@@ -93,6 +107,10 @@ body {
 .main-content {
   flex: 1;
   padding: 28px 32px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* ─── SIDEBAR ────────────────────────────────── */
@@ -3007,6 +3025,16 @@ select:focus-visible {
 .friend-weekly-them {
   color: var(--blue);
   font-weight: 600;
+}
+
+/* ─── iOS INPUT ZOOM FIX ─────────────────────── */
+/* Prevents iOS from zooming in when tapping inputs (zoom triggers on font-size < 16px) */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+    touch-action: manipulation;
+  }
+  button { touch-action: manipulation; }
 }
 
 /* ─── MOBILE TIMER BAR ───────────────────────── */
