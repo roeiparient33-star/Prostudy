@@ -10,12 +10,11 @@ const ALL_PRESET_SVGS = [...PRESET_SVGS, ...NEW_PRESET_SVGS];
 export default function OnboardingTour({ page, setPage }) {
   const { profile, updateProfile } = useAuth();
   const [active,     setActive]    = useState(false);
-  const [steps,      setSteps]     = useState([]);   // empty = welcome screen
+  const [steps,      setSteps]     = useState([]);
   const [stepIdx,    setStepIdx]   = useState(0);
   const [targetRect, setRect]      = useState(null);
   const measureRef = useRef(null);
 
-  // Activate for new users (avatar chosen, tour not yet done)
   useEffect(() => {
     if (profile && !profile.onboarding_completed_at && profile.avatar_config?.baseSelected) {
       setActive(true);
@@ -24,13 +23,11 @@ export default function OnboardingTour({ page, setPage }) {
 
   const currentStep = steps[stepIdx];
 
-  // Navigate to the step's page when step changes
   useEffect(() => {
     if (!active || !currentStep?.page) return;
     if (currentStep.page !== page) setPage(currentStep.page);
   }, [stepIdx, active]); // eslint-disable-line
 
-  // Measure target element after page renders (for highlight only)
   useEffect(() => {
     if (!active || !currentStep) return;
     clearTimeout(measureRef.current);
@@ -41,7 +38,6 @@ export default function OnboardingTour({ page, setPage }) {
     }, 140);
   }, [stepIdx, active, page]); // eslint-disable-line
 
-  // Re-measure on resize
   useEffect(() => {
     if (!active || !currentStep?.target) return;
     function onResize() {
@@ -60,7 +56,7 @@ export default function OnboardingTour({ page, setPage }) {
   function chooseTour(mode) {
     const chosen = mode === 'quick' ? QUICK_STEPS : ALL_STEPS;
     setSteps(chosen);
-    setStepIdx(1); // skip welcome step
+    setStepIdx(1);
   }
 
   function next() {
@@ -76,32 +72,36 @@ export default function OnboardingTour({ page, setPage }) {
 
   const avatarSrc = ALL_PRESET_SVGS[profile?.avatar_config?.presetId ?? 0];
 
-  // ── Welcome choice screen ──────────────────────────────────────────────────
+  // ── Welcome screen ─────────────────────────────────────────────────────────
   if (steps.length === 0) {
     const step = ALL_STEPS[0];
     return (
       <>
         <div className="tour-overlay" />
         <div className="tour-welcome-box">
-          <img src={avatarSrc} className="tour-welcome-avatar" alt="סוכן" />
+          <div className="tour-welcome-avatar-wrap">
+            <img src={avatarSrc} className="tour-welcome-avatar" alt="סוכן" />
+          </div>
           <div className="tour-welcome-title">{step.title}</div>
           <p className="tour-welcome-body">{step.body}</p>
+
           <div className="tour-welcome-choices">
             <button className="tour-choice-btn" onClick={() => chooseTour('quick')}>
-              <Zap size={16} />
+              <div className="tour-choice-icon"><Zap size={18} /></div>
               <div className="tour-choice-inner">
                 <span className="tour-choice-label">סיור מהיר</span>
                 <span className="tour-choice-sub">5 תחנות · בערך 2 דקות</span>
               </div>
             </button>
             <button className="tour-choice-btn" onClick={() => chooseTour('full')}>
-              <List size={16} />
+              <div className="tour-choice-icon"><List size={18} /></div>
               <div className="tour-choice-inner">
                 <span className="tour-choice-label">סיור מלא</span>
-                <span className="tour-choice-sub">11 תחנות · בערך 5 דקות</span>
+                <span className="tour-choice-sub">10 תחנות · בערך 5 דקות</span>
               </div>
             </button>
           </div>
+
           <button className="tour-skip-link" onClick={completeTour}>
             דלג, אני מסתדר לבד ←
           </button>
@@ -110,18 +110,17 @@ export default function OnboardingTour({ page, setPage }) {
     );
   }
 
-  // ── Regular tour step ──────────────────────────────────────────────────────
-  const totalSteps = steps.length - 1;
-  const realStep   = stepIdx;
-  const isFirst    = stepIdx === 1;
-  const isLast     = stepIdx === steps.length - 1;
+  // ── Regular step ───────────────────────────────────────────────────────────
+  const totalSteps  = steps.length - 1;
+  const realStep    = stepIdx;
+  const progressPct = Math.round((realStep / totalSteps) * 100);
+  const isFirst     = stepIdx === 1;
+  const isLast      = stepIdx === steps.length - 1;
 
   return (
     <>
-      {/* Dark backdrop */}
       <div className="tour-overlay" />
 
-      {/* Glowing highlight on the target element */}
       {targetRect && (
         <div
           className="tour-highlight"
@@ -134,28 +133,29 @@ export default function OnboardingTour({ page, setPage }) {
         />
       )}
 
-      {/* Bubble — always centered, never moves */}
       <div className="tour-bubble tour-bubble-enter" key={currentStep.id}>
 
-        {/* Head: avatar + title */}
+        {/* Header: avatar + badge + title */}
         <div className="tour-bubble-head">
           <img src={avatarSrc} className="tour-avatar-sm" alt="סוכן" />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="tour-step-title">{currentStep.title}</div>
-            <div className="tour-progress-row">
-              {Array.from({ length: totalSteps }, (_, i) => (
-                <div
-                  key={i}
-                  className={`tour-dot${i + 1 === realStep ? ' active' : i + 1 < realStep ? ' done' : ''}`}
-                />
-              ))}
-              <span className="tour-count">{realStep} / {totalSteps}</span>
+          <div className="tour-bubble-meta">
+            <div className="tour-step-badge">
+              שלב {realStep} מתוך {totalSteps}
             </div>
+            <div className="tour-step-title">{currentStep.title}</div>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="tour-progress-wrap">
+          <div className="tour-progress-track">
+            <div className="tour-progress-fill" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
 
         <p className="tour-bubble-body">{currentStep.body}</p>
 
+        {/* Actions */}
         <div className="tour-bubble-actions">
           <button className="tour-skip-btn" onClick={completeTour}>דלג על הסיור</button>
           <div style={{ display: 'flex', gap: 8 }}>
