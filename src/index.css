@@ -3027,15 +3027,66 @@ select:focus-visible {
 /* ─── RESPONSIVE ─────────────────────────────── */
 @media (max-width: 1100px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .dashboard-grid { grid-template-columns: 1fr; }
+  .db-stats   { grid-template-columns: repeat(2, 1fr); }
+  .db-grid    { grid-template-columns: 1fr; }
+  .db-right   { width: 100%; }
 }
 
 @media (max-width: 768px) {
+  /* ── Viewport fix (iOS 100vh jumping) ── */
+  html { height: -webkit-fill-available; overflow-x: hidden; }
+  body { overflow-x: hidden; min-height: -webkit-fill-available; }
+
   :root { --sidebar-w: 0px; }
+
+  /* ── Layout ── */
   .sidebar { display: none; }
-  .main-wrapper { margin-right: 0; }
-  .main-content { padding-bottom: calc(140px + env(safe-area-inset-bottom)); }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .courses-mini-grid { grid-template-columns: 1fr; }
+  .app-layout { min-height: 100svh; }
+  .main-wrapper { margin-right: 0; min-height: 100svh; }
+
+  /* ── Topbar ── */
+  .topbar { padding: 0 16px; }
+  .topbar-title { font-size: 14px; }
+
+  /* ── Main content ── */
+  .main-content {
+    padding: 16px 14px calc(150px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+
+  /* ── Dashboard ── */
+  .db-page { gap: 14px; }
+  .db-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .db-stat  { padding: 14px; }
+  .db-stat-value { font-size: 22px; }
+  .db-grid  { grid-template-columns: 1fr; gap: 14px; }
+  .db-left, .db-right { width: 100%; }
+  .db-card-inner { padding: 14px; }
+  .courses-mini-grid { grid-template-columns: repeat(2, 1fr); }
+  .db-greet h1 { font-size: 20px; }
+
+  /* ── Cards ── */
+  .card { border-radius: var(--radius-md); }
+
+  /* ── Tasks ── */
+  .tasks-filters { flex-direction: column; gap: 10px; }
+  .filters-group { flex-wrap: wrap; }
+
+  /* ── Schedule ── */
+  .schedule-card { overflow-x: auto; }
+  .sch-wrap      { min-width: 520px; }
+
+  /* ── Courses ── */
+  .courses-grid { grid-template-columns: 1fr; }
+
+  /* ── Achievements ── */
+  .achievements-grid { grid-template-columns: repeat(2, 1fr); }
   .achievements-mini-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* ── Modals ── */
+  .modal-box { margin: 8px; width: calc(100% - 16px); }
+  .modal-row-2 { grid-template-columns: 1fr; }
+
+  /* ── Friends ── */
+  .friends-live-list { gap: 8px; }
 }
