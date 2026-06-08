@@ -2854,6 +2854,35 @@ select:focus-visible {
   margin-top: 20px;
 }
 
+.auth-forgot-link {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  margin-right: auto;
+  padding: 0;
+  transition: color 150ms;
+}
+.auth-forgot-link:hover { color: var(--accent); }
+
+.auth-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 16px;
+  transition: color 150ms;
+}
+.auth-back-btn:hover { color: var(--text-2); }
+
 .auth-link {
   background: none;
   border: none;
