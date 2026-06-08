@@ -3154,6 +3154,30 @@ select:focus-visible {
   .db-stat-achievements { grid-column: span 2; }
 }
 
+/* ─── TASK ACTION BUTTONS ───────────────────── */
+.task-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.task-action-btn:hover {
+  background: var(--bg-main);
+  color: var(--accent);
+}
+.task-action-btn-delete:hover {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
 /* ─── STREAK BADGE ───────────────────────────── */
 .db-streak-badge {
   display: inline-flex;

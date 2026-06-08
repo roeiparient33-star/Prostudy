@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, X, CheckSquare, SearchX } from 'lucide-react';
+import { Plus, X, CheckSquare, SearchX, Pencil } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { taskTypeColors, taskTypeLabels, priorityLabels } from '../data/mockData';
 import ModalPortal from '../components/ModalPortal';
@@ -31,12 +31,22 @@ export default function Tasks() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter,   setTypeFilter]   = useState('all');
   const [showModal,    setShowModal]    = useState(false);
+  const [editingTask,  setEditingTask]  = useState(null);
 
   const courseById = Object.fromEntries(courses.map(c => [c.id, c]));
 
   async function handleAdd(data) {
     await addTask(data);
     setShowModal(false);
+  }
+
+  async function handleEdit(data) {
+    await updateTask(editingTask.id, data);
+    setEditingTask(null);
+  }
+
+  function openEdit(task) {
+    setEditingTask(task);
   }
 
   const filtered = useMemo(() => tasks.filter(t => {
@@ -138,13 +148,24 @@ export default function Tasks() {
                         )}
                       </div>
                     </div>
-                    <button
-                      style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-3)', padding:4, flexShrink:0, transition:'color .15s' }}
-                      onClick={() => removeTask(task.id)}
-                      title="מחק"
-                    >
-                      <X size={14}/>
-                    </button>
+                    <div style={{ display:'flex', gap:2, flexShrink:0 }}>
+                      <button
+                        className="task-action-btn"
+                        onClick={() => openEdit(task)}
+                        title="ערוך משימה"
+                        aria-label="ערוך משימה"
+                      >
+                        <Pencil size={13}/>
+                      </button>
+                      <button
+                        className="task-action-btn task-action-btn-delete"
+                        onClick={() => removeTask(task.id)}
+                        title="מחק"
+                        aria-label="מחק משימה"
+                      >
+                        <X size={14}/>
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -153,24 +174,37 @@ export default function Tasks() {
         </>
       )}
 
-      {showModal && <AddTaskModal courses={courses} onAdd={handleAdd} onClose={() => setShowModal(false)}/>}
+      {showModal && (
+        <TaskModal courses={courses} onSave={handleAdd} onClose={() => setShowModal(false)}/>
+      )}
+      {editingTask && (
+        <TaskModal courses={courses} task={editingTask} onSave={handleEdit} onClose={() => setEditingTask(null)}/>
+      )}
     </div>
   );
 }
 
-function AddTaskModal({ courses, onAdd, onClose }) {
-  const [title,    setTitle]    = useState('');
-  const [courseId, setCourseId] = useState('');
-  const [type,     setType]     = useState('homework');
-  const [dueDate,  setDueDate]  = useState(TODAY);
-  const [priority, setPriority] = useState('medium');
+function TaskModal({ courses, task, onSave, onClose }) {
+  const isEdit = !!task;
+  const [title,    setTitle]    = useState(task?.title    ?? '');
+  const [courseId, setCourseId] = useState(task?.courseId ? String(task.courseId) : '');
+  const [type,     setType]     = useState(task?.type     ?? 'homework');
+  const [dueDate,  setDueDate]  = useState(task?.dueDate  ?? TODAY);
+  const [priority, setPriority] = useState(task?.priority ?? 'medium');
   const [saving,   setSaving]   = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
-    await onAdd({ title: title.trim(), courseId: courseId || null, type, dueDate, priority, completed: false });
+    await onSave({
+      title:     title.trim(),
+      courseId:  courseId || null,
+      type,
+      dueDate,
+      priority,
+      ...(isEdit ? {} : { completed: false }),
+    });
     setSaving(false);
   }
 
@@ -179,13 +213,20 @@ function AddTaskModal({ courses, onAdd, onClose }) {
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box">
         <div className="modal-head">
-          <span className="modal-head-title">הוספת משימה</span>
-          <button className="modal-close-btn" onClick={onClose}><X size={17}/></button>
+          <span className="modal-head-title">{isEdit ? 'עריכת משימה' : 'הוספת משימה'}</span>
+          <button className="modal-close-btn" onClick={onClose} aria-label="סגור"><X size={17}/></button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-field">
             <label className="modal-label">כותרת *</label>
-            <input className="modal-input" value={title} onChange={e => setTitle(e.target.value)} placeholder="לדוגמה: תרגיל 5 – מיון ועצים" required autoFocus/>
+            <input
+              className="modal-input"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="לדוגמה: תרגיל 5 – מיון ועצים"
+              required
+              autoFocus
+            />
           </div>
           <div className="modal-row-2">
             <div className="modal-field">
@@ -222,7 +263,7 @@ function AddTaskModal({ courses, onAdd, onClose }) {
           </div>
           <div className="modal-actions">
             <button type="submit" className="modal-btn-primary" disabled={!title.trim() || saving}>
-              {saving ? 'שומר...' : 'הוסף משימה'}
+              {saving ? 'שומר...' : isEdit ? 'שמור שינויים' : 'הוסף משימה'}
             </button>
             <button type="button" className="modal-btn-ghost" onClick={onClose}>ביטול</button>
           </div>
