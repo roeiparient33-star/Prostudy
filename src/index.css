@@ -3272,3 +3272,133 @@ select:focus-visible {
   color: var(--text-3);
   min-width: 32px;
 }
+
+/* ─── PACT CARD ICON WRAP ────────────────────── */
+.pact-card-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--purple-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ─── INVITE SUCCESS BADGE ───────────────────── */
+.invite-success-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--green-dim);
+  color: var(--green);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ─── FRIENDS SKELETON ───────────────────────── */
+.friends-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+}
+.friend-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.skeleton-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--border-light);
+  flex-shrink: 0;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+.skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skeleton-line {
+  border-radius: 6px;
+  background: var(--border-light);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+.skeleton-line-lg { height: 14px; width: 55%; }
+.skeleton-line-sm { height: 11px; width: 35%; }
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* ─── ACHIEVEMENTS — entrance animation ──────── */
+.achievement-card {
+  animation: card-enter 0.22s ease-out both;
+}
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── TOUCH TARGETS — min 44px ───────────────── */
+.invite-copy-btn { min-height: 44px; }
+.friend-btn      { min-height: 36px; }
+
+/* ─── CURSOR POINTER ─────────────────────────── */
+.db-stat-achievements { cursor: pointer; }
+.pact-card            { cursor: default; }
+.invite-card          { cursor: default; }
+
+/* ─── HOVER — smooth feedback ────────────────── */
+.db-stat-achievements:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--yellow);
+  transform: translateY(-2px);
+  transition: all 0.18s ease-out;
+}
+.pact-card:hover {
+  border-color: rgba(155,113,247,0.4);
+  box-shadow: 0 4px 16px rgba(155,113,247,0.12);
+}
+
+/* ─── PREFERS-REDUCED-MOTION ─────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  /* stop live pulse dot */
+  .live-pulse-dot       { animation: none !important; }
+  /* stop skeleton shimmer */
+  .skeleton-circle,
+  .skeleton-line        { animation: none !important; opacity: 0.6; }
+  /* stop card entrance */
+  .achievement-card     { animation: none !important; }
+  /* stop progress bar transition */
+  .pact-progress-bar-fill { transition: none !important; }
+  /* stop all generic transitions */
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
+/* ─── FRIENDS EMPTY STATE ────────────────────── */
+.friends-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--text-3);
+}
+.friends-empty-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.friends-empty-sub {
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+  max-width: 260px;
+  line-height: 1.5;
+}

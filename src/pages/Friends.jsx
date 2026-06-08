@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { UserPlus, Search, Check, X, Clock, UserCheck, Copy, Link2, Target, Plus } from 'lucide-react';
+import { UserPlus, Search, Check, X, Clock, UserCheck, Copy, Link2, Target, Plus, Users, Handshake } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import AvatarSVG from '../components/AvatarSVG';
@@ -56,8 +56,10 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
       <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
         <div className="modal-box">
           <div className="modal-head">
-            <span className="modal-head-title">🤝 ברית לימוד חדשה</span>
-            <button className="modal-close-btn" onClick={onClose}><X size={17}/></button>
+            <span className="modal-head-title" style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <Handshake size={17} color="var(--purple)"/> ברית לימוד חדשה
+            </span>
+            <button className="modal-close-btn" onClick={onClose} aria-label="סגור"><X size={17}/></button>
           </div>
           <form onSubmit={handleCreate} className="modal-form">
             <div className="modal-field">
@@ -92,34 +94,41 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
 // ── Pact Card ──────────────────────────────────────────────
 function PactCard({ pact, userId, onLeave }) {
   const members = pact.pact_members || [];
-  const target  = pact.target_hours_per_week * 60; // in minutes
+  const target  = pact.target_hours_per_week * 60;
 
   return (
     <div className="pact-card">
       <div className="pact-card-header">
-        <div className="pact-card-icon">🤝</div>
-        <div>
+        <div className="pact-card-icon-wrap" aria-hidden="true">
+          <Handshake size={20} color="var(--purple)"/>
+        </div>
+        <div style={{ flex:1 }}>
           <div className="pact-card-name">{pact.name}</div>
           <div className="pact-card-target">יעד: {pact.target_hours_per_week} שע׳ / שבוע</div>
         </div>
         {pact.creator_id === userId && (
-          <button className="friend-btn friend-btn-reject" onClick={onLeave} title="סגור ברית" style={{marginRight:'auto'}}>
+          <button
+            className="friend-btn friend-btn-reject"
+            onClick={onLeave}
+            aria-label="סגור ברית"
+            title="סגור ברית"
+          >
             <X size={14}/>
           </button>
         )}
       </div>
       <div className="pact-members-list">
         {members.map(m => {
-          const prof   = m.profiles || {};
-          const mins   = prof.weekly_studied_minutes || 0;
-          const pct    = target ? Math.min(100, Math.round((mins / target) * 100)) : 0;
-          const isMe   = prof.id === userId;
+          const prof = m.profiles || {};
+          const mins = prof.weekly_studied_minutes || 0;
+          const pct  = target ? Math.min(100, Math.round((mins / target) * 100)) : 0;
+          const isMe = prof.id === userId;
           return (
             <div key={m.user_id} className="pact-member-row">
               <div className="pact-member-name">{prof.name || '?'}{isMe ? ' (אתה)' : ''}</div>
               <div className="pact-member-progress">
-                <div className="pact-progress-bar-wrap">
-                  <div className="pact-progress-bar-fill" style={{width:`${pct}%`}}/>
+                <div className="pact-progress-bar-wrap" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${prof.name}: ${pct}%`}>
+                  <div className="pact-progress-bar-fill" style={{ width:`${pct}%` }}/>
                 </div>
                 <span className="pact-member-hours">{fmtHours(mins)}</span>
                 <span className="pact-member-pct">{pct}%</span>
@@ -128,6 +137,23 @@ function PactCard({ pact, userId, onLeave }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ── Loading Skeleton ───────────────────────────────────────
+function FriendsSkeleton() {
+  return (
+    <div className="friends-skeleton">
+      {[1,2,3].map(i => (
+        <div key={i} className="friend-skeleton-row">
+          <div className="skeleton-circle"/>
+          <div className="skeleton-lines">
+            <div className="skeleton-line skeleton-line-lg"/>
+            <div className="skeleton-line skeleton-line-sm"/>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -143,13 +169,12 @@ export default function Friends() {
   const [searching,     setSearching]     = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [showPactModal, setShowPactModal] = useState(false);
-  const [inviteCopied,  setInviteCopied] = useState(false);
+  const [inviteCopied,  setInviteCopied]  = useState(false);
   const [inviteCount,   setInviteCount]   = useState(0);
   const [, setTick] = useState(0);
   const searchTimer  = useRef(null);
   const friendIdsRef = useRef([]);
 
-  // Tick every 30s to refresh elapsed times
   useEffect(() => {
     const id = setInterval(() => setTick(n => n + 1), 30000);
     return () => clearInterval(id);
@@ -173,9 +198,7 @@ export default function Friends() {
 
   const fetchPacts = useCallback(async () => {
     const { data: memberships } = await supabase
-      .from('pact_members')
-      .select('pact_id')
-      .eq('user_id', user.id);
+      .from('pact_members').select('pact_id').eq('user_id', user.id);
     const ids = (memberships || []).map(m => m.pact_id);
     if (ids.length === 0) { setPacts([]); return; }
     const { data: pactsData } = await supabase
@@ -194,7 +217,6 @@ export default function Friends() {
       .then(({ count }) => setInviteCount(count || 0));
   }, [fetchFriendships, fetchPacts, user.id]);
 
-  // Realtime: re-fetch when a friend's profile changes
   useEffect(() => {
     const channel = supabase
       .channel('friend-live-status')
@@ -247,17 +269,18 @@ export default function Friends() {
   }
 
   function copyInviteLink() {
-    const link = `${APP_URL}?ref=${profile?.invite_code || ''}`;
+    if (!profile?.invite_code) return;
+    const link = `${APP_URL}?ref=${profile.invite_code}`;
     navigator.clipboard.writeText(link);
     setInviteCopied(true);
     setTimeout(() => setInviteCopied(false), 2500);
   }
 
-  const friends     = friendships.filter(f => f.status === 'accepted');
-  const incoming    = friendships.filter(f => f.status === 'pending' && f.addressee?.id === user.id);
-  const studyingNow = friends.map(f => getOther(f)).filter(o => o?.session_active);
-  const myWeeklyMins= profile?.weekly_studied_minutes ?? 0;
-  const friendObjs  = friends.map(f => getOther(f)).filter(o => o?.id);
+  const friends      = friendships.filter(f => f.status === 'accepted');
+  const incoming     = friendships.filter(f => f.status === 'pending' && f.addressee?.id === user.id);
+  const studyingNow  = friends.map(f => getOther(f)).filter(o => o?.session_active);
+  const myWeeklyMins = profile?.weekly_studied_minutes ?? 0;
+  const friendObjs   = friends.map(f => getOther(f)).filter(o => o?.id);
 
   return (
     <div className="page-enter">
@@ -267,39 +290,36 @@ export default function Friends() {
       </div>
 
       {/* ── Invite Link ──────────────────────────── */}
-      <div className="card" style={{ marginBottom:20 }}>
+      <div className="card invite-card" style={{ marginBottom:20 }}>
         <div className="section-header" style={{ marginBottom:14 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
             <Link2 size={16} color="var(--accent)"/>
             <span className="section-title">הזמן חברים</span>
           </div>
           {inviteCount > 0 && (
-            <span style={{ fontSize:12, color:'var(--green)', fontWeight:700 }}>
-              🎉 {inviteCount} נרשמו דרכך! (+{inviteCount*50} קרדיטים לך)
+            <span className="invite-success-badge">
+              <Check size={11}/> {inviteCount} נרשמו דרכך
             </span>
           )}
         </div>
-        <p style={{ fontSize:13, color:'var(--text-2)', marginBottom:14, lineHeight:1.6 }}>
+        <p style={{ fontSize:13, color:'var(--text-2)', marginBottom:14, lineHeight:1.65 }}>
           שתף את הקישור האישי שלך — כשחבר נרשם דרכו, שניכם מקבלים קרדיטים!
         </p>
         <div className="invite-link-row">
-          <div className="invite-link-box" dir="ltr">
-            {profile?.invite_code
-              ? `${APP_URL}?ref=${profile.invite_code}`
-              : 'טוען קישור...'}
+          <div className="invite-link-box" dir="ltr" aria-label="קישור הזמנה אישי">
+            {profile?.invite_code ? `${APP_URL}?ref=${profile.invite_code}` : 'טוען קישור...'}
           </div>
           <button
             className={`invite-copy-btn${inviteCopied ? ' copied' : ''}`}
             onClick={copyInviteLink}
             disabled={!profile?.invite_code}
+            aria-label="העתק קישור הזמנה"
           >
-            {inviteCopied
-              ? <><Check size={14}/> הועתק!</>
-              : <><Copy size={14}/> העתק</>}
+            {inviteCopied ? <><Check size={14}/> הועתק!</> : <><Copy size={14}/> העתק</>}
           </button>
         </div>
         <div className="invite-rewards-row">
-          <span className="invite-reward-pill">+50 קרדיטים לחבר שמזמין</span>
+          <span className="invite-reward-pill">+50 קרדיטים לך על הזמנה</span>
           <span className="invite-reward-pill" style={{ background:'var(--green-dim)', color:'var(--green)' }}>+30 קרדיטים לנרשם</span>
         </div>
       </div>
@@ -309,7 +329,7 @@ export default function Friends() {
         <div className="card friends-live-section">
           <div className="section-header" style={{ marginBottom:14 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span className="live-pulse-dot"/>
+              <span className="live-pulse-dot" aria-hidden="true"/>
               <span className="section-title">לומדים עכשיו</span>
             </div>
             <span style={{ fontSize:13, color:'var(--green)', fontWeight:700 }}>{studyingNow.length} פעילים</span>
@@ -325,7 +345,7 @@ export default function Friends() {
                     <span className="friend-live-elapsed">{fmtElapsed(o.session_started_at)}</span>
                   </div>
                 </div>
-                <span className="friend-live-badge">לומד</span>
+                <span className="friend-live-badge" aria-label="לומד כעת">לומד</span>
               </div>
             ))}
           </div>
@@ -336,29 +356,36 @@ export default function Friends() {
       <div className="card" style={{ marginBottom:20 }}>
         <div className="section-header">
           <span className="section-title">חפש חברים</span>
-          <UserPlus size={17} color="var(--text-3)"/>
+          <UserPlus size={17} color="var(--text-3)" aria-hidden="true"/>
         </div>
         <div className="friends-search-wrap">
-          <Search size={15} className="friends-search-icon"/>
+          <Search size={15} className="friends-search-icon" aria-hidden="true"/>
           <input
             className="friends-search-input"
             placeholder="חפש לפי שם..."
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); searchUsers(e.target.value); }}
+            aria-label="חיפוש משתמשים לפי שם"
           />
         </div>
-        {searching && <div style={{ padding:'12px 0', color:'var(--text-3)', fontSize:13, textAlign:'center' }}>מחפש...</div>}
+
+        {searching && (
+          <div style={{ padding:'12px 0', color:'var(--text-3)', fontSize:13, textAlign:'center' }} role="status">
+            מחפש...
+          </div>
+        )}
+
         {!searching && searchResults.length > 0 && (
-          <div className="friends-search-results">
+          <div className="friends-search-results" role="list">
             {searchResults.map(u => {
               const rel = getRelation(u.id);
               return (
-                <div className="friend-row" key={u.id}>
-                  <div className="friend-avatar">{u.name?.[0] ?? '?'}</div>
+                <div className="friend-row" key={u.id} role="listitem">
+                  <div className="friend-avatar" aria-hidden="true">{u.name?.[0] ?? '?'}</div>
                   <span className="friend-name">{u.name}</span>
                   <div className="friend-row-actions">
                     {!rel && (
-                      <button className="friend-btn friend-btn-add" onClick={() => sendRequest(u.id)} disabled={actionLoading === u.id}>
+                      <button className="friend-btn friend-btn-add" onClick={() => sendRequest(u.id)} disabled={actionLoading === u.id} aria-label={`שלח בקשת חברות ל${u.name}`}>
                         <UserPlus size={13}/> הוסף חבר
                       </button>
                     )}
@@ -379,6 +406,7 @@ export default function Friends() {
             })}
           </div>
         )}
+
         {!searching && searchQuery.trim() && searchResults.length === 0 && (
           <div style={{ padding:'16px 0 4px', color:'var(--text-3)', fontSize:13, textAlign:'center' }}>
             לא נמצאו משתמשים בשם "{searchQuery}"
@@ -398,16 +426,16 @@ export default function Friends() {
               const other = getOther(f);
               return (
                 <div className="friend-card" key={f.id}>
-                  <div className="friend-avatar friend-avatar-lg">{other.name?.[0] ?? '?'}</div>
+                  <div className="friend-avatar friend-avatar-lg" aria-hidden="true">{other.name?.[0] ?? '?'}</div>
                   <div className="friend-card-info">
                     <div className="friend-name">{other.name}</div>
                     <div className="friend-card-sub">שלח לך בקשת חברות</div>
                   </div>
                   <div className="friend-card-actions">
-                    <button className="friend-btn friend-btn-accept" onClick={() => acceptRequest(f.id)} disabled={actionLoading === f.id}>
+                    <button className="friend-btn friend-btn-accept" onClick={() => acceptRequest(f.id)} disabled={actionLoading === f.id} aria-label={`אשר בקשת חברות של ${other.name}`}>
                       <Check size={13}/> אשר
                     </button>
-                    <button className="friend-btn friend-btn-reject" onClick={() => removeRelation(f.id)} disabled={actionLoading === f.id}>
+                    <button className="friend-btn friend-btn-reject" onClick={() => removeRelation(f.id)} disabled={actionLoading === f.id} aria-label={`דחה בקשת חברות של ${other.name}`}>
                       <X size={13}/>
                     </button>
                   </div>
@@ -425,10 +453,10 @@ export default function Friends() {
           <span style={{ fontSize:13, color:'var(--text-3)', fontWeight:500 }}>{friends.length} חברים</span>
         </div>
         {loading ? (
-          <div style={{ padding:'28px 0', textAlign:'center', color:'var(--text-3)', fontSize:13 }}>טוען...</div>
+          <FriendsSkeleton/>
         ) : friends.length === 0 ? (
           <div className="friends-empty">
-            <div className="friends-empty-icon">👥</div>
+            <Users size={36} color="var(--text-3)" aria-hidden="true"/>
             <div className="friends-empty-text">עדיין אין חברים</div>
             <div className="friends-empty-sub">חפש חברים למעלה או שתף את קישור ההזמנה</div>
           </div>
@@ -452,20 +480,20 @@ export default function Friends() {
 
       {/* ── Study Pacts ──────────────────────────── */}
       <div className="card">
-        <div className="section-header" style={{ marginBottom:pacts.length > 0 ? 14 : 0 }}>
+        <div className="section-header" style={{ marginBottom: pacts.length > 0 ? 14 : 0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <Target size={16} color="var(--purple)"/>
+            <Target size={16} color="var(--purple)" aria-hidden="true"/>
             <span className="section-title">ברית לימוד</span>
           </div>
           {friendObjs.length > 0 && (
-            <button className="friend-btn friend-btn-add" onClick={() => setShowPactModal(true)}>
+            <button className="friend-btn friend-btn-add" onClick={() => setShowPactModal(true)} aria-label="צור ברית לימוד חדשה">
               <Plus size={13}/> ברית חדשה
             </button>
           )}
         </div>
         {pacts.length === 0 ? (
           <div className="friends-empty" style={{ padding:'20px 0' }}>
-            <div className="friends-empty-icon">🤝</div>
+            <Handshake size={36} color="var(--text-3)" aria-hidden="true"/>
             <div className="friends-empty-text">אין ברית לימוד פעילה</div>
             <div className="friends-empty-sub">
               {friendObjs.length === 0
@@ -505,15 +533,21 @@ function MiniAvatar({ profile, size = 52, isLive = false }) {
 
   if (!hasAvatar) {
     return (
-      <div className={`friend-avatar friend-avatar-lg${isLive ? ' friend-avatar-live' : ''}`}
-        style={{ width:size, height:size, flexShrink:0 }}>
+      <div
+        className={`friend-avatar friend-avatar-lg${isLive ? ' friend-avatar-live' : ''}`}
+        style={{ width:size, height:size, flexShrink:0 }}
+        aria-hidden="true"
+      >
         {profile?.name?.[0] ?? '?'}
       </div>
     );
   }
   return (
-    <div className={`friend-mini-avatar-wrap${isLive ? ' friend-avatar-live' : ''}`}
-      style={{ width:size, height:Math.round(size*1.22), flexShrink:0 }}>
+    <div
+      className={`friend-mini-avatar-wrap${isLive ? ' friend-avatar-live' : ''}`}
+      style={{ width:size, height:Math.round(size*1.22), flexShrink:0 }}
+      aria-hidden="true"
+    >
       <AvatarSVG config={cfg} purchased={ownedItems}/>
     </div>
   );
@@ -531,7 +565,7 @@ function FriendCard({ other, myWeeklyMins, myName, isRemoving, onRemove }) {
       <div className="friend-card-info" style={{ flex:1, minWidth:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:6 }}>
           <div className="friend-name">{other.name}</div>
-          {isLive && <span className="friend-live-badge-sm">לומד</span>}
+          {isLive && <span className="friend-live-badge-sm" aria-label="לומד כעת">לומד</span>}
         </div>
         {isLive && other.session_course_name && (
           <div className="friend-live-meta" style={{ marginBottom:4 }}>
@@ -545,7 +579,13 @@ function FriendCard({ other, myWeeklyMins, myName, isRemoving, onRemove }) {
           <span className="friend-weekly-them">{friendFirst}: {fmtHours(friendMins)}</span>
         </div>
       </div>
-      <button className="friend-btn friend-btn-reject" onClick={onRemove} disabled={isRemoving} title="הסר חבר" style={{ marginTop:2 }}>
+      <button
+        className="friend-btn friend-btn-reject"
+        onClick={onRemove}
+        disabled={isRemoving}
+        aria-label={`הסר את ${other.name} מרשימת החברים`}
+        style={{ marginTop:2 }}
+      >
         <X size={14}/>
       </button>
     </div>

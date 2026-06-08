@@ -85,8 +85,10 @@ export default function Dashboard({ onNavigate }) {
         <div
           className="db-stat db-stat-achievements"
           onClick={() => onNavigate('achievements')}
-          style={{ cursor:'pointer' }}
-          title="ארון הגביעים"
+          role="button"
+          tabIndex={0}
+          onKeyDown={e => e.key === 'Enter' && onNavigate('achievements')}
+          aria-label="עבור לעמוד הישגים"
         >
           <div className="db-stat-top">
             <div className="db-stat-label">הישגים</div>
@@ -94,7 +96,9 @@ export default function Dashboard({ onNavigate }) {
               <Trophy size={16} color="var(--yellow)"/>
             </div>
           </div>
-          <div className="db-stat-value">🏆</div>
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:4, marginBottom:3 }}>
+            <Trophy size={22} color="var(--yellow)" strokeWidth={2.2}/>
+          </div>
           <div className="db-stat-sub">לחץ לצפייה</div>
         </div>
       </div>
