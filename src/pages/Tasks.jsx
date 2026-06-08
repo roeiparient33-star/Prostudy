@@ -250,7 +250,13 @@ function TaskModal({ courses, task, onSave, onClose }) {
           </div>
           <div className="modal-row-2">
             <div className="modal-field">
-              <label className="modal-label">תאריך יעד</label>
+              <label className="modal-label">
+                {type === 'homework' ? 'תאריך הגשה' :
+                 type === 'exam'     ? 'תאריך מבחן' :
+                 type === 'lecture'  ? 'תאריך שיעור' :
+                 type === 'practice' ? 'תאריך תרגול' :
+                                       'תאריך קריאה'}
+              </label>
               <input className="modal-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} dir="ltr"/>
             </div>
             <div className="modal-field">

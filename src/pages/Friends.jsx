@@ -121,12 +121,48 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
 }
 
 // ── Pact Card ──────────────────────────────────────────────
-function PactCard({ pact, userId, onLeave }) {
-  const members = pact.pact_members || [];
-  const target  = pact.target_hours_per_week * 60;
+function PactCard({ pact, userId, onLeave, onTasksChanged }) {
+  const members   = pact.pact_members || [];
+  const tasks     = pact.pact_tasks   || [];
+  const target    = pact.target_hours_per_week * 60;
+  const isCreator = pact.creator_id === userId;
+
+  const [newTask,   setNewTask]   = useState('');
+  const [addingTask, setAddingTask] = useState(false);
+  const [savingTask, setSavingTask] = useState(false);
+
+  async function submitTask(e) {
+    e.preventDefault();
+    if (!newTask.trim()) return;
+    setSavingTask(true);
+    await supabase.from('pact_tasks').insert({
+      pact_id: pact.id, title: newTask.trim(), created_by: userId,
+    });
+    setNewTask('');
+    setAddingTask(false);
+    setSavingTask(false);
+    onTasksChanged();
+  }
+
+  async function deleteTask(taskId) {
+    await supabase.from('pact_tasks').delete().eq('id', taskId);
+    onTasksChanged();
+  }
+
+  async function toggleCompletion(taskId, alreadyDone) {
+    if (alreadyDone) {
+      await supabase.from('pact_task_completions')
+        .delete().eq('pact_task_id', taskId).eq('user_id', userId);
+    } else {
+      await supabase.from('pact_task_completions')
+        .insert({ pact_task_id: taskId, user_id: userId });
+    }
+    onTasksChanged();
+  }
 
   return (
     <div className="pact-card">
+      {/* Header */}
       <div className="pact-card-header">
         <div className="pact-card-icon-wrap" aria-hidden="true">
           <Handshake size={20} color="var(--purple)"/>
@@ -135,17 +171,14 @@ function PactCard({ pact, userId, onLeave }) {
           <div className="pact-card-name">{pact.name}</div>
           <div className="pact-card-target">יעד: {pact.target_hours_per_week} שע׳ / שבוע</div>
         </div>
-        {pact.creator_id === userId && (
-          <button
-            className="friend-btn friend-btn-reject"
-            onClick={onLeave}
-            aria-label="סגור ברית"
-            title="סגור ברית"
-          >
+        {isCreator && (
+          <button className="friend-btn friend-btn-reject" onClick={onLeave} aria-label="סגור ברית" title="סגור ברית">
             <X size={14}/>
           </button>
         )}
       </div>
+
+      {/* Member progress */}
       <div className="pact-members-list">
         {members.map(m => {
           const prof = m.profiles || {};
@@ -156,7 +189,7 @@ function PactCard({ pact, userId, onLeave }) {
             <div key={m.user_id} className="pact-member-row">
               <div className="pact-member-name">{prof.name || '?'}{isMe ? ' (אתה)' : ''}</div>
               <div className="pact-member-progress">
-                <div className="pact-progress-bar-wrap" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${prof.name}: ${pct}%`}>
+                <div className="pact-progress-bar-wrap" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
                   <div className="pact-progress-bar-fill" style={{ width:`${pct}%` }}/>
                 </div>
                 <span className="pact-member-hours">{fmtHours(mins)}</span>
@@ -165,6 +198,85 @@ function PactCard({ pact, userId, onLeave }) {
             </div>
           );
         })}
+      </div>
+
+      {/* Tasks section */}
+      <div className="pact-tasks-section">
+        <div className="pact-tasks-header">
+          <span className="pact-tasks-title">משימות הברית</span>
+          {isCreator && !addingTask && (
+            <button className="pact-add-task-btn" onClick={() => setAddingTask(true)} aria-label="הוסף משימה">
+              <Plus size={13}/> הוסף
+            </button>
+          )}
+        </div>
+
+        {/* Add task form */}
+        {addingTask && (
+          <form className="pact-task-form" onSubmit={submitTask}>
+            <input
+              className="pact-task-input"
+              value={newTask}
+              onChange={e => setNewTask(e.target.value)}
+              placeholder="שם המשימה..."
+              autoFocus
+            />
+            <button type="submit" className="pact-task-save-btn" disabled={!newTask.trim() || savingTask}>
+              {savingTask ? '...' : <Check size={13}/>}
+            </button>
+            <button type="button" className="pact-task-cancel-btn" onClick={() => { setAddingTask(false); setNewTask(''); }}>
+              <X size={13}/>
+            </button>
+          </form>
+        )}
+
+        {/* Task list */}
+        {tasks.length === 0 && !addingTask ? (
+          <div className="pact-tasks-empty">
+            {isCreator ? 'לחץ "+ הוסף" כדי להוסיף משימות לברית' : 'אין משימות עדיין'}
+          </div>
+        ) : (
+          <div className="pact-task-list">
+            {tasks.map(task => {
+              const completions = task.pact_task_completions || [];
+              const myDone = completions.some(c => c.user_id === userId);
+              const doneCount = completions.length;
+              return (
+                <div key={task.id} className="pact-task-row">
+                  <button
+                    className={`pact-task-check${myDone ? ' done' : ''}`}
+                    onClick={() => toggleCompletion(task.id, myDone)}
+                    aria-label={myDone ? 'בטל סימון' : 'סמן כהושלם'}
+                  >
+                    {myDone && <Check size={10} strokeWidth={3}/>}
+                  </button>
+                  <span className={`pact-task-title${myDone ? ' done' : ''}`}>{task.title}</span>
+                  <div className="pact-task-meta">
+                    {members.map(m => {
+                      const prof = m.profiles || {};
+                      const done = completions.some(c => c.user_id === prof.id);
+                      return (
+                        <div
+                          key={m.user_id}
+                          className={`pact-task-member-dot${done ? ' done' : ''}`}
+                          title={`${prof.name}${done ? ' ✓' : ''}`}
+                        >
+                          {prof.name?.[0] ?? '?'}
+                        </div>
+                      );
+                    })}
+                    <span className="pact-task-count">{doneCount}/{members.length}</span>
+                  </div>
+                  {isCreator && (
+                    <button className="pact-task-delete-btn" onClick={() => deleteTask(task.id)} aria-label="מחק משימה">
+                      <X size={11}/>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -233,7 +345,8 @@ export default function Friends() {
     const { data: pactsData } = await supabase
       .from('study_pacts')
       .select(`id, name, target_hours_per_week, creator_id,
-        pact_members(user_id, profiles(id, name, weekly_studied_minutes))`)
+        pact_members(user_id, profiles(id, name, weekly_studied_minutes)),
+        pact_tasks(id, title, created_by, pact_task_completions(user_id))`)
       .in('id', ids);
     setPacts(pactsData || []);
   }, [user.id]);
@@ -533,7 +646,7 @@ export default function Friends() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             {pacts.map(p => (
-              <PactCard key={p.id} pact={p} userId={user.id} onLeave={() => leavePact(p.id)}/>
+              <PactCard key={p.id} pact={p} userId={user.id} onLeave={() => leavePact(p.id)} onTasksChanged={fetchPacts}/>
             ))}
           </div>
         )}
