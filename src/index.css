@@ -2166,13 +2166,11 @@ select:focus-visible {
 .av-shop-btn-equip { background: var(--green-dim); color: var(--green); border-color: rgba(40,201,111,.2); }
 .av-shop-btn-equipped { background: var(--green); color: white; border-color: var(--green); }
 
-/* ─── DASHBOARD ONE-PAGE LAYOUT ─────────────── */
+/* ─── DASHBOARD LAYOUT ───────────────────────── */
 .db-page {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - var(--topbar-h));
-  gap: 12px;
-  overflow: hidden;
+  gap: 16px;
 }
 
 .db-greet h1 {
@@ -2230,23 +2228,17 @@ select:focus-visible {
 .db-grid {
   display: grid;
   grid-template-columns: 1fr 300px;
-  gap: 12px;
-  flex: 1;
-  min-height: 0;
+  gap: 16px;
 }
 .db-left, .db-right {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: 0;
+  gap: 16px;
 }
-.db-left { flex: 1; min-height: 0; }
 .db-right { width: 300px; }
 
 .db-card-inner {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -2254,7 +2246,7 @@ select:focus-visible {
 .db-card-inner .section-title { font-size: 14px; }
 
 .db-courses-scroll {
-  flex: 1;
+  max-height: 260px;
   overflow-y: auto;
   margin: 0 -4px;
   padding: 0 4px;
@@ -2263,14 +2255,13 @@ select:focus-visible {
 .db-courses-scroll .course-mini-card { padding: 12px 14px; }
 
 .db-empty-sm {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   color: var(--text-3);
   font-size: 13px;
-  padding: 12px 0;
+  padding: 20px 0;
 }
 
 /* ─── SIDEBAR LOGOUT ─────────────────────────── */
@@ -3174,22 +3165,16 @@ select:focus-visible {
   }
 
   /* ── Dashboard ── */
-  .db-page {
-    height: auto;
-    overflow: visible;
-    gap: 14px;
-  }
   .db-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .db-stat  { padding: 14px; }
   .db-stat-value { font-size: 22px; }
   .db-grid  { grid-template-columns: 1fr; gap: 14px; }
   .db-left, .db-right { width: 100%; }
-  .db-card-inner { padding: 14px; overflow: visible; min-height: auto; }
+  .db-card-inner { padding: 14px; }
   .courses-mini-grid { grid-template-columns: repeat(2, 1fr); }
+  .db-courses-scroll { max-height: 220px; }
   .db-greet h1 { font-size: 20px; }
-  /* Avatar card — ensure it's never clipped */
   .db-right .card { overflow: visible; }
-  .db-right .db-card-inner { overflow: visible; }
 
   /* ── Cards ── */
   .card { border-radius: var(--radius-md); }
