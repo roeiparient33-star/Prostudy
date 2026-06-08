@@ -20,13 +20,6 @@ export const ALL_STEPS = [
     body: 'פה רואים כל מה שחשוב — גרף התקדמות, שעות לימוד, משימות פתוחות ועוד.',
   },
   {
-    id: 'streak',
-    page: 'dashboard',
-    target: '[data-tour="streak-badge"]',
-    title: 'הרצף שלך 🔥',
-    body: 'הלהבה הזו גדלה עם כל יום שלומדים. שוברים יום אחד — חוזרים לאפס. בלי כרחים, אבל כיף לשמור עליה.',
-  },
-  {
     id: 'timer',
     page: 'dashboard',
     target: '[data-tour="study-timer"]',
