@@ -43,10 +43,9 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
       .select()
       .single();
     if (error || !pact) { setErr('שגיאה ביצירת הברית'); setSaving(false); return; }
-    await supabase.from('pact_members').insert([
-      { pact_id: pact.id, user_id: userId },
-      { pact_id: pact.id, user_id: friendId },
-    ]);
+    // Insert creator first so RLS sees them as member before adding friend
+    await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: userId });
+    await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: friendId });
     setSaving(false);
     onCreated();
   }
