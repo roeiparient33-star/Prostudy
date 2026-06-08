@@ -3092,4 +3092,183 @@ select:focus-visible {
 
   /* ── Friends ── */
   .friends-live-list { gap: 8px; }
+
+  /* ── Pact ── */
+  .pact-members-list { gap: 8px; }
+  .pact-member-progress { flex-wrap: wrap; }
+
+  /* ── Invite ── */
+  .invite-link-row { flex-direction: column; }
+  .invite-copy-btn { width: 100%; justify-content: center; }
+
+  /* ── Stats (5th tile — achievements) ── */
+  .db-stat-achievements { grid-column: span 2; }
+}
+
+/* ─── STREAK BADGE ───────────────────────────── */
+.db-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(255,101,36,0.12), rgba(245,166,35,0.12));
+  border: 1px solid rgba(255,101,36,0.22);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.db-streak-badge:hover { background: rgba(255,101,36,0.18); }
+.db-streak-best {
+  font-size: 10.5px;
+  color: var(--text-3);
+  font-weight: 500;
+  border-right: 1px solid rgba(255,101,36,0.25);
+  padding-right: 6px;
+  margin-right: 2px;
+}
+
+/* ─── STATS 5-column on desktop ─────────────── */
+.db-stats { grid-template-columns: repeat(5, 1fr); }
+
+@media (max-width: 1300px) {
+  .db-stats { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 1100px) {
+  .db-stats { grid-template-columns: repeat(2, 1fr); }
+  .db-stat-achievements { grid-column: span 2; }
+}
+
+/* ─── INVITE LINK (Friends page) ────────────── */
+.invite-link-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.invite-link-box {
+  flex: 1;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 9px 14px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.invite-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.invite-copy-btn:hover { background: var(--accent-dark); }
+.invite-copy-btn.copied { background: var(--green); }
+.invite-copy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.invite-rewards-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.invite-reward-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* ─── STUDY PACT ─────────────────────────────── */
+.pact-card {
+  background: var(--bg-main);
+  border: 1.5px solid var(--purple-dim);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  transition: all 0.18s;
+}
+.pact-card:hover { box-shadow: var(--shadow-sm); }
+.pact-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.pact-card-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.pact-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.pact-card-target {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+.pact-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pact-member-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pact-member-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.pact-member-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pact-progress-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.pact-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--accent));
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  min-width: 4px;
+}
+.pact-member-hours {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--purple);
+  min-width: 40px;
+}
+.pact-member-pct {
+  font-size: 11.5px;
+  color: var(--text-3);
+  min-width: 32px;
 }

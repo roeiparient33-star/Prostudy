@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Target, ListChecks, Clock, BookOpen, CalendarDays, Smile } from 'lucide-react';
+import { Plus, X, Target, ListChecks, Clock, BookOpen, CalendarDays, Smile, Trophy, Flame } from 'lucide-react';
 import ProgressBar from '../components/ProgressBar';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
@@ -29,6 +29,8 @@ export default function Dashboard({ onNavigate }) {
   const weeklyGoal     = profile?.weekly_goal_hours ?? 20;
   const weeklyMins     = profile?.weekly_studied_minutes ?? 0;
   const weeklyHours    = (weeklyMins / 60).toFixed(1);
+  const streakCurrent  = profile?.streak_current ?? 0;
+  const streakBest     = profile?.streak_best    ?? 0;
 
   const todayTasks    = tasks.filter(t => t.dueDate === TODAY).slice(0, 4);
   const upcomingExams = [...exams]
@@ -50,7 +52,20 @@ export default function Dashboard({ onNavigate }) {
       {/* Greeting */}
       <div className="db-greet">
         <h1>שלום{firstName ? <>, <span className="greet-name">{firstName}</span></> : ''}! 👋</h1>
-        <p>{profile?.semester ?? ''}</p>
+        <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+          <p style={{ margin:0 }}>{profile?.semester ?? ''}</p>
+          {streakCurrent > 0 && (
+            <button
+              className="db-streak-badge"
+              onClick={() => onNavigate('achievements')}
+              title={`שיא: ${streakBest} ימים`}
+            >
+              <Flame size={13} fill="currentColor"/>
+              <span>{streakCurrent} ימים ברצף</span>
+              {streakBest > streakCurrent && <span className="db-streak-best">שיא: {streakBest}</span>}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -67,6 +82,21 @@ export default function Dashboard({ onNavigate }) {
             <div className="db-stat-sub">{s.sub}</div>
           </div>
         ))}
+        <div
+          className="db-stat db-stat-achievements"
+          onClick={() => onNavigate('achievements')}
+          style={{ cursor:'pointer' }}
+          title="ארון הגביעים"
+        >
+          <div className="db-stat-top">
+            <div className="db-stat-label">הישגים</div>
+            <div className="db-stat-icon" style={{background:'var(--yellow-dim)'}}>
+              <Trophy size={16} color="var(--yellow)"/>
+            </div>
+          </div>
+          <div className="db-stat-value">🏆</div>
+          <div className="db-stat-sub">לחץ לצפייה</div>
+        </div>
       </div>
 
       {/* Main grid */}

@@ -34,18 +34,45 @@ export function AuthProvider({ children }) {
 
   async function fetchProfile(userId) {
     setActiveUser(userId);
-    const { data } = await supabase
+    let { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
 
-    if (data && typeof data.weekly_reset_date === 'string' && data.weekly_reset_date !== getWeekKey()) {
+    if (!data) { setLoading(false); return; }
+
+    // Weekly reset
+    if (typeof data.weekly_reset_date === 'string' && data.weekly_reset_date !== getWeekKey()) {
       const reset = { weekly_studied_minutes: 0, weekly_reset_date: getWeekKey() };
       await supabase.from('profiles').update(reset).eq('id', userId);
-      setProfile({ ...data, ...reset });
-      setLoading(false);
-      return;
+      data = { ...data, ...reset };
+    }
+
+    // Generate invite code if missing
+    if (!data.invite_code) {
+      const code = Math.random().toString(36).substr(2, 8).toUpperCase();
+      await supabase.from('profiles').update({ invite_code: code }).eq('id', userId);
+      data = { ...data, invite_code: code };
+    }
+
+    // Apply referral reward (only once — referred_by is null before applying)
+    if (!data.referred_by) {
+      const refCode = localStorage.getItem('ps_ref');
+      if (refCode) {
+        const { data: inviter } = await supabase
+          .from('profiles')
+          .select('id, credits')
+          .eq('invite_code', refCode)
+          .neq('id', userId)
+          .single();
+        if (inviter) {
+          await supabase.from('profiles').update({ credits: (inviter.credits || 0) + 50 }).eq('id', inviter.id);
+          await supabase.from('profiles').update({ credits: (data.credits || 0) + 30, referred_by: inviter.id }).eq('id', userId);
+          data = { ...data, credits: (data.credits || 0) + 30, referred_by: inviter.id };
+        }
+        localStorage.removeItem('ps_ref');
+      }
     }
 
     setProfile(data);

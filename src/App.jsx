@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { useData } from './contexts/DataContext';
 import Sidebar from './components/Sidebar';
@@ -15,14 +15,20 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import LandingPage from './pages/LandingPage';
 import AvatarOnboarding from './components/AvatarOnboarding';
+import Achievements from './pages/Achievements';
+
+// Capture referral code from URL on app load
+const urlRef = new URLSearchParams(window.location.search).get('ref');
+if (urlRef) localStorage.setItem('ps_ref', urlRef);
 
 const PAGE_MAP = {
-  dashboard: { component: Dashboard, title: 'דשבורד' },
-  courses:   { component: Courses,   title: 'קורסים' },
-  tasks:     { component: Tasks,     title: 'משימות' },
-  schedule:  { component: Schedule,  title: 'מערכת שעות' },
-  friends:   { component: Friends,   title: 'חברים' },
-  avatar:    { component: Avatar,    title: 'סוכן הלימודים שלי' },
+  dashboard:    { component: Dashboard,    title: 'דשבורד' },
+  courses:      { component: Courses,      title: 'קורסים' },
+  tasks:        { component: Tasks,        title: 'משימות' },
+  schedule:     { component: Schedule,     title: 'מערכת שעות' },
+  friends:      { component: Friends,      title: 'חברים' },
+  avatar:       { component: Avatar,       title: 'סוכן הלימודים שלי' },
+  achievements: { component: Achievements, title: 'ארון הגביעים' },
 };
 
 export default function App() {

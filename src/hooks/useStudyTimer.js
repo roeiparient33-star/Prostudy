@@ -103,15 +103,32 @@ export function useStudyTimer(userId, onStopped) {
 
         const { data: prof } = await supabase
           .from('profiles')
-          .select('credits, weekly_studied_minutes')
+          .select('credits, weekly_studied_minutes, total_studied_minutes, streak_current, streak_best, streak_last_date')
           .eq('id', userId)
           .single();
 
         if (prof) {
+          const todayStr     = new Date().toISOString().split('T')[0];
+          const lastDate     = prof.streak_last_date || null;
+          let newStreak      = prof.streak_current || 0;
+          let newBest        = prof.streak_best    || 0;
+
+          if (lastDate !== todayStr) {
+            const yesterday    = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            newStreak = (lastDate === yesterdayStr) ? newStreak + 1 : 1;
+            newBest   = Math.max(newBest, newStreak);
+          }
+
           await supabase.from('profiles').update({
             ...sessionClear,
             credits:                (prof.credits               || 0) + creditsEarned,
             weekly_studied_minutes: (prof.weekly_studied_minutes || 0) + minsStudied,
+            total_studied_minutes:  (prof.total_studied_minutes  || 0) + minsStudied,
+            streak_current:         newStreak,
+            streak_best:            newBest,
+            streak_last_date:       todayStr,
           }).eq('id', userId);
           onStopped?.();
         } else {

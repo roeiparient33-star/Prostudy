@@ -1,43 +1,155 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { UserPlus, Search, Check, X, Clock, UserCheck } from 'lucide-react';
+import { UserPlus, Search, Check, X, Clock, UserCheck, Copy, Link2, Target, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import AvatarSVG from '../components/AvatarSVG';
+import ModalPortal from '../components/ModalPortal';
 
 const PROFILE_FIELDS = 'id, name, weekly_studied_minutes, session_active, session_course_name, session_started_at, avatar_config, avatar_purchased';
+const APP_URL = window.location.origin;
 
 function fmtElapsed(isoStr) {
   if (!isoStr) return '';
   const mins = Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
   if (mins < 1) return 'הרגע התחיל';
   if (mins < 60) return `${mins} דק׳`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m > 0 ? `${h}:${String(m).padStart(2, '0')} שע׳` : `${h} שע׳`;
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m > 0 ? `${h}:${String(m).padStart(2,'0')} שע׳` : `${h} שע׳`;
 }
 
 function fmtHours(mins) {
   const m = mins || 0;
   if (m === 0) return '0 שע׳';
-  const h = Math.floor(m / 60);
-  const rem = m % 60;
+  const h = Math.floor(m / 60), rem = m % 60;
   if (h === 0) return `${rem} דק׳`;
-  return rem > 0 ? `${h}:${String(rem).padStart(2, '0')}` : `${h} שע׳`;
+  return rem > 0 ? `${h}:${String(rem).padStart(2,'0')}` : `${h} שע׳`;
 }
 
+// ── Study Pact Modal ──────────────────────────────────────
+function CreatePactModal({ friends, userId, onCreated, onClose }) {
+  const [name,    setName]    = useState('');
+  const [target,  setTarget]  = useState(10);
+  const [friendId,setFriendId]= useState('');
+  const [saving,  setSaving]  = useState(false);
+  const [err,     setErr]     = useState('');
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    if (!name.trim() || !friendId) { setErr('יש למלא שם ולבחור חבר'); return; }
+    setSaving(true);
+    const { data: pact, error } = await supabase
+      .from('study_pacts')
+      .insert({ name: name.trim(), target_hours_per_week: target, creator_id: userId })
+      .select()
+      .single();
+    if (error || !pact) { setErr('שגיאה ביצירת הברית'); setSaving(false); return; }
+    await supabase.from('pact_members').insert([
+      { pact_id: pact.id, user_id: userId },
+      { pact_id: pact.id, user_id: friendId },
+    ]);
+    setSaving(false);
+    onCreated();
+  }
+
+  return (
+    <ModalPortal>
+      <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal-box">
+          <div className="modal-head">
+            <span className="modal-head-title">🤝 ברית לימוד חדשה</span>
+            <button className="modal-close-btn" onClick={onClose}><X size={17}/></button>
+          </div>
+          <form onSubmit={handleCreate} className="modal-form">
+            <div className="modal-field">
+              <label className="modal-label">שם הברית</label>
+              <input className="modal-input" value={name} onChange={e=>setName(e.target.value)} placeholder="לדוגמה: נוכחות מושלמת" autoFocus/>
+            </div>
+            <div className="modal-field">
+              <label className="modal-label">יעד שבועי (שעות)</label>
+              <input className="modal-input" type="number" min={1} max={80} value={target} onChange={e=>setTarget(Number(e.target.value))} dir="ltr"/>
+            </div>
+            <div className="modal-field">
+              <label className="modal-label">חבר לברית</label>
+              <select className="modal-input" value={friendId} onChange={e=>setFriendId(e.target.value)}>
+                <option value="">בחר חבר...</option>
+                {friends.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+            </div>
+            {err && <div className="auth-error">{err}</div>}
+            <div className="modal-actions">
+              <button type="submit" className="modal-btn-primary" disabled={saving || !name.trim() || !friendId}>
+                {saving ? 'יוצר...' : 'צור ברית'}
+              </button>
+              <button type="button" className="modal-btn-ghost" onClick={onClose}>ביטול</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </ModalPortal>
+  );
+}
+
+// ── Pact Card ──────────────────────────────────────────────
+function PactCard({ pact, userId, onLeave }) {
+  const members = pact.pact_members || [];
+  const target  = pact.target_hours_per_week * 60; // in minutes
+
+  return (
+    <div className="pact-card">
+      <div className="pact-card-header">
+        <div className="pact-card-icon">🤝</div>
+        <div>
+          <div className="pact-card-name">{pact.name}</div>
+          <div className="pact-card-target">יעד: {pact.target_hours_per_week} שע׳ / שבוע</div>
+        </div>
+        {pact.creator_id === userId && (
+          <button className="friend-btn friend-btn-reject" onClick={onLeave} title="סגור ברית" style={{marginRight:'auto'}}>
+            <X size={14}/>
+          </button>
+        )}
+      </div>
+      <div className="pact-members-list">
+        {members.map(m => {
+          const prof   = m.profiles || {};
+          const mins   = prof.weekly_studied_minutes || 0;
+          const pct    = target ? Math.min(100, Math.round((mins / target) * 100)) : 0;
+          const isMe   = prof.id === userId;
+          return (
+            <div key={m.user_id} className="pact-member-row">
+              <div className="pact-member-name">{prof.name || '?'}{isMe ? ' (אתה)' : ''}</div>
+              <div className="pact-member-progress">
+                <div className="pact-progress-bar-wrap">
+                  <div className="pact-progress-bar-fill" style={{width:`${pct}%`}}/>
+                </div>
+                <span className="pact-member-hours">{fmtHours(mins)}</span>
+                <span className="pact-member-pct">{pct}%</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ─────────────────────────────────────────
 export default function Friends() {
   const { user, profile } = useAuth();
-  const [searchQuery, setSearchQuery]     = useState('');
+  const [searchQuery,   setSearchQuery]   = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [friendships, setFriendships]     = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [searching, setSearching]         = useState(false);
+  const [friendships,   setFriendships]   = useState([]);
+  const [pacts,         setPacts]         = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [searching,     setSearching]     = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
+  const [showPactModal, setShowPactModal] = useState(false);
+  const [inviteCopied,  setInviteCopied] = useState(false);
+  const [inviteCount,   setInviteCount]   = useState(0);
   const [, setTick] = useState(0);
   const searchTimer  = useRef(null);
   const friendIdsRef = useRef([]);
 
-  // Tick every 30s to refresh elapsed-time displays
+  // Tick every 30s to refresh elapsed times
   useEffect(() => {
     const id = setInterval(() => setTick(n => n + 1), 30000);
     return () => clearInterval(id);
@@ -46,32 +158,48 @@ export default function Friends() {
   const fetchFriendships = useCallback(async () => {
     const { data } = await supabase
       .from('friendships')
-      .select(`
-        id, status, created_at,
+      .select(`id, status, created_at,
         requester:profiles!requester_id(${PROFILE_FIELDS}),
-        addressee:profiles!addressee_id(${PROFILE_FIELDS})
-      `)
+        addressee:profiles!addressee_id(${PROFILE_FIELDS})`)
       .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
     const fs = data || [];
     setFriendships(fs);
     setLoading(false);
-    // Track accepted friend IDs for realtime filtering
     friendIdsRef.current = fs
       .filter(f => f.status === 'accepted')
       .map(f => f.requester?.id === user.id ? f.addressee?.id : f.requester?.id)
       .filter(Boolean);
   }, [user.id]);
 
-  useEffect(() => { fetchFriendships(); }, [fetchFriendships]);
+  const fetchPacts = useCallback(async () => {
+    const { data: memberships } = await supabase
+      .from('pact_members')
+      .select('pact_id')
+      .eq('user_id', user.id);
+    const ids = (memberships || []).map(m => m.pact_id);
+    if (ids.length === 0) { setPacts([]); return; }
+    const { data: pactsData } = await supabase
+      .from('study_pacts')
+      .select(`id, name, target_hours_per_week, creator_id,
+        pact_members(user_id, profiles(id, name, weekly_studied_minutes))`)
+      .in('id', ids);
+    setPacts(pactsData || []);
+  }, [user.id]);
 
-  // Realtime: re-fetch when a friend's profile changes (session start/stop)
+  useEffect(() => {
+    fetchFriendships();
+    fetchPacts();
+    supabase.from('profiles').select('id',{count:'exact',head:true})
+      .eq('referred_by', user.id)
+      .then(({ count }) => setInviteCount(count || 0));
+  }, [fetchFriendships, fetchPacts, user.id]);
+
+  // Realtime: re-fetch when a friend's profile changes
   useEffect(() => {
     const channel = supabase
       .channel('friend-live-status')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
-        if (friendIdsRef.current.includes(payload.new.id)) {
-          fetchFriendships();
-        }
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'profiles' }, (payload) => {
+        if (friendIdsRef.current.includes(payload.new.id)) fetchFriendships();
       })
       .subscribe();
     return () => supabase.removeChannel(channel);
@@ -83,11 +211,8 @@ export default function Friends() {
     setSearching(true);
     searchTimer.current = setTimeout(async () => {
       const { data } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .ilike('name', `%${query}%`)
-        .neq('id', user.id)
-        .limit(8);
+        .from('profiles').select('id, name')
+        .ilike('name', `%${query}%`).neq('id', user.id).limit(8);
       setSearchResults(data || []);
       setSearching(false);
     }, 350);
@@ -96,39 +221,43 @@ export default function Friends() {
   async function sendRequest(addresseeId) {
     setActionLoading(addresseeId);
     await supabase.from('friendships').insert({ requester_id: user.id, addressee_id: addresseeId });
-    await fetchFriendships();
-    setActionLoading(null);
+    await fetchFriendships(); setActionLoading(null);
   }
-
   async function acceptRequest(friendshipId) {
     setActionLoading(friendshipId);
-    await supabase.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
-    await fetchFriendships();
-    setActionLoading(null);
+    await supabase.from('friendships').update({ status:'accepted' }).eq('id', friendshipId);
+    await fetchFriendships(); setActionLoading(null);
   }
-
   async function removeRelation(friendshipId) {
     setActionLoading(friendshipId);
     await supabase.from('friendships').delete().eq('id', friendshipId);
-    await fetchFriendships();
-    setActionLoading(null);
+    await fetchFriendships(); setActionLoading(null);
+  }
+  async function leavePact(pactId) {
+    await supabase.from('study_pacts').delete().eq('id', pactId);
+    fetchPacts();
   }
 
   function getOther(f) {
-    if (!f.requester || !f.addressee) return { name: '?' };
+    if (!f.requester || !f.addressee) return { name:'?' };
     return f.requester.id === user.id ? f.addressee : f.requester;
   }
-
   function getRelation(targetId) {
-    return friendships.find(f =>
-      f.requester?.id === targetId || f.addressee?.id === targetId
-    );
+    return friendships.find(f => f.requester?.id === targetId || f.addressee?.id === targetId);
   }
 
-  const friends      = friendships.filter(f => f.status === 'accepted');
-  const incoming     = friendships.filter(f => f.status === 'pending' && f.addressee?.id === user.id);
-  const studyingNow  = friends.map(f => getOther(f)).filter(o => o?.session_active);
-  const myWeeklyMins = profile?.weekly_studied_minutes ?? 0;
+  function copyInviteLink() {
+    const link = `${APP_URL}?ref=${profile?.invite_code || ''}`;
+    navigator.clipboard.writeText(link);
+    setInviteCopied(true);
+    setTimeout(() => setInviteCopied(false), 2500);
+  }
+
+  const friends     = friendships.filter(f => f.status === 'accepted');
+  const incoming    = friendships.filter(f => f.status === 'pending' && f.addressee?.id === user.id);
+  const studyingNow = friends.map(f => getOther(f)).filter(o => o?.session_active);
+  const myWeeklyMins= profile?.weekly_studied_minutes ?? 0;
+  const friendObjs  = friends.map(f => getOther(f)).filter(o => o?.id);
 
   return (
     <div className="page-enter">
@@ -137,28 +266,62 @@ export default function Friends() {
         <p className="friends-page-sub">עקוב אחרי חברים וראה את ההתקדמות שלהם</p>
       </div>
 
-      {/* ── Live Now ─────────────────────────────────── */}
+      {/* ── Invite Link ──────────────────────────── */}
+      <div className="card" style={{ marginBottom:20 }}>
+        <div className="section-header" style={{ marginBottom:14 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <Link2 size={16} color="var(--accent)"/>
+            <span className="section-title">הזמן חברים</span>
+          </div>
+          {inviteCount > 0 && (
+            <span style={{ fontSize:12, color:'var(--green)', fontWeight:700 }}>
+              🎉 {inviteCount} נרשמו דרכך! (+{inviteCount*50} קרדיטים לך)
+            </span>
+          )}
+        </div>
+        <p style={{ fontSize:13, color:'var(--text-2)', marginBottom:14, lineHeight:1.6 }}>
+          שתף את הקישור האישי שלך — כשחבר נרשם דרכו, שניכם מקבלים קרדיטים!
+        </p>
+        <div className="invite-link-row">
+          <div className="invite-link-box" dir="ltr">
+            {profile?.invite_code
+              ? `${APP_URL}?ref=${profile.invite_code}`
+              : 'טוען קישור...'}
+          </div>
+          <button
+            className={`invite-copy-btn${inviteCopied ? ' copied' : ''}`}
+            onClick={copyInviteLink}
+            disabled={!profile?.invite_code}
+          >
+            {inviteCopied
+              ? <><Check size={14}/> הועתק!</>
+              : <><Copy size={14}/> העתק</>}
+          </button>
+        </div>
+        <div className="invite-rewards-row">
+          <span className="invite-reward-pill">+50 קרדיטים לחבר שמזמין</span>
+          <span className="invite-reward-pill" style={{ background:'var(--green-dim)', color:'var(--green)' }}>+30 קרדיטים לנרשם</span>
+        </div>
+      </div>
+
+      {/* ── Live Now ─────────────────────────────── */}
       {studyingNow.length > 0 && (
         <div className="card friends-live-section">
-          <div className="section-header" style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="live-pulse-dot" />
+          <div className="section-header" style={{ marginBottom:14 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span className="live-pulse-dot"/>
               <span className="section-title">לומדים עכשיו</span>
             </div>
-            <span style={{ fontSize: 13, color: 'var(--green)', fontWeight: 700 }}>
-              {studyingNow.length} פעילים
-            </span>
+            <span style={{ fontSize:13, color:'var(--green)', fontWeight:700 }}>{studyingNow.length} פעילים</span>
           </div>
           <div className="friends-live-list">
             {studyingNow.map(o => (
               <div key={o.id} className="friend-live-row">
-                <MiniAvatar profile={o} size={48} isLive={true} />
+                <MiniAvatar profile={o} size={48} isLive={true}/>
                 <div className="friend-live-info">
                   <div className="friend-name">{o.name}</div>
                   <div className="friend-live-meta">
-                    {o.session_course_name && (
-                      <span className="friend-live-course">{o.session_course_name}</span>
-                    )}
+                    {o.session_course_name && <span className="friend-live-course">{o.session_course_name}</span>}
                     <span className="friend-live-elapsed">{fmtElapsed(o.session_started_at)}</span>
                   </div>
                 </div>
@@ -169,14 +332,14 @@ export default function Friends() {
         </div>
       )}
 
-      {/* ── Search ───────────────────────────────────── */}
-      <div className="card" style={{ marginBottom: 20 }}>
+      {/* ── Search ───────────────────────────────── */}
+      <div className="card" style={{ marginBottom:20 }}>
         <div className="section-header">
           <span className="section-title">חפש חברים</span>
-          <UserPlus size={17} color="var(--text-3)" />
+          <UserPlus size={17} color="var(--text-3)"/>
         </div>
         <div className="friends-search-wrap">
-          <Search size={15} className="friends-search-icon" />
+          <Search size={15} className="friends-search-icon"/>
           <input
             className="friends-search-input"
             placeholder="חפש לפי שם..."
@@ -184,13 +347,7 @@ export default function Friends() {
             onChange={e => { setSearchQuery(e.target.value); searchUsers(e.target.value); }}
           />
         </div>
-
-        {searching && (
-          <div style={{ padding: '12px 0', color: 'var(--text-3)', fontSize: 13, textAlign: 'center' }}>
-            מחפש...
-          </div>
-        )}
-
+        {searching && <div style={{ padding:'12px 0', color:'var(--text-3)', fontSize:13, textAlign:'center' }}>מחפש...</div>}
         {!searching && searchResults.length > 0 && (
           <div className="friends-search-results">
             {searchResults.map(u => {
@@ -201,32 +358,20 @@ export default function Friends() {
                   <span className="friend-name">{u.name}</span>
                   <div className="friend-row-actions">
                     {!rel && (
-                      <button
-                        className="friend-btn friend-btn-add"
-                        onClick={() => sendRequest(u.id)}
-                        disabled={actionLoading === u.id}
-                      >
-                        <UserPlus size={13} /> הוסף חבר
+                      <button className="friend-btn friend-btn-add" onClick={() => sendRequest(u.id)} disabled={actionLoading === u.id}>
+                        <UserPlus size={13}/> הוסף חבר
                       </button>
                     )}
                     {rel?.status === 'pending' && rel.requester.id === user.id && (
-                      <span className="friend-tag friend-tag-pending">
-                        <Clock size={11} /> ממתין לאישור
-                      </span>
+                      <span className="friend-tag friend-tag-pending"><Clock size={11}/> ממתין</span>
                     )}
                     {rel?.status === 'pending' && rel.addressee.id === user.id && (
-                      <button
-                        className="friend-btn friend-btn-accept"
-                        onClick={() => acceptRequest(rel.id)}
-                        disabled={actionLoading === rel.id}
-                      >
-                        <Check size={13} /> אשר
+                      <button className="friend-btn friend-btn-accept" onClick={() => acceptRequest(rel.id)} disabled={actionLoading === rel.id}>
+                        <Check size={13}/> אשר
                       </button>
                     )}
                     {rel?.status === 'accepted' && (
-                      <span className="friend-tag friend-tag-accepted">
-                        <UserCheck size={11} /> חבר
-                      </span>
+                      <span className="friend-tag friend-tag-accepted"><UserCheck size={11}/> חבר</span>
                     )}
                   </div>
                 </div>
@@ -234,17 +379,16 @@ export default function Friends() {
             })}
           </div>
         )}
-
         {!searching && searchQuery.trim() && searchResults.length === 0 && (
-          <div style={{ padding: '16px 0 4px', color: 'var(--text-3)', fontSize: 13, textAlign: 'center' }}>
+          <div style={{ padding:'16px 0 4px', color:'var(--text-3)', fontSize:13, textAlign:'center' }}>
             לא נמצאו משתמשים בשם "{searchQuery}"
           </div>
         )}
       </div>
 
-      {/* ── Incoming requests ────────────────────────── */}
+      {/* ── Incoming requests ────────────────────── */}
       {incoming.length > 0 && (
-        <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card" style={{ marginBottom:20 }}>
           <div className="section-header">
             <span className="section-title">בקשות חברות</span>
             <span className="friends-count-badge">{incoming.length}</span>
@@ -260,19 +404,11 @@ export default function Friends() {
                     <div className="friend-card-sub">שלח לך בקשת חברות</div>
                   </div>
                   <div className="friend-card-actions">
-                    <button
-                      className="friend-btn friend-btn-accept"
-                      onClick={() => acceptRequest(f.id)}
-                      disabled={actionLoading === f.id}
-                    >
-                      <Check size={13} /> אשר
+                    <button className="friend-btn friend-btn-accept" onClick={() => acceptRequest(f.id)} disabled={actionLoading === f.id}>
+                      <Check size={13}/> אשר
                     </button>
-                    <button
-                      className="friend-btn friend-btn-reject"
-                      onClick={() => removeRelation(f.id)}
-                      disabled={actionLoading === f.id}
-                    >
-                      <X size={13} />
+                    <button className="friend-btn friend-btn-reject" onClick={() => removeRelation(f.id)} disabled={actionLoading === f.id}>
+                      <X size={13}/>
                     </button>
                   </div>
                 </div>
@@ -282,24 +418,19 @@ export default function Friends() {
         </div>
       )}
 
-      {/* ── Friends list ─────────────────────────────── */}
-      <div className="card">
+      {/* ── Friends list ─────────────────────────── */}
+      <div className="card" style={{ marginBottom:20 }}>
         <div className="section-header">
           <span className="section-title">החברים שלי</span>
-          <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500 }}>
-            {friends.length} חברים
-          </span>
+          <span style={{ fontSize:13, color:'var(--text-3)', fontWeight:500 }}>{friends.length} חברים</span>
         </div>
-
         {loading ? (
-          <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
-            טוען...
-          </div>
+          <div style={{ padding:'28px 0', textAlign:'center', color:'var(--text-3)', fontSize:13 }}>טוען...</div>
         ) : friends.length === 0 ? (
           <div className="friends-empty">
             <div className="friends-empty-icon">👥</div>
             <div className="friends-empty-text">עדיין אין חברים</div>
-            <div className="friends-empty-sub">חפש חברים למעלה כדי להתחיל</div>
+            <div className="friends-empty-sub">חפש חברים למעלה או שתף את קישור ההזמנה</div>
           </div>
         ) : (
           <div className="friends-list">
@@ -307,8 +438,7 @@ export default function Friends() {
               const other = getOther(f);
               return (
                 <FriendCard
-                  key={f.id}
-                  other={other}
+                  key={f.id} other={other}
                   myWeeklyMins={myWeeklyMins}
                   myName={profile?.name?.split(' ')[0] ?? 'אתה'}
                   isRemoving={actionLoading === f.id}
@@ -319,54 +449,92 @@ export default function Friends() {
           </div>
         )}
       </div>
+
+      {/* ── Study Pacts ──────────────────────────── */}
+      <div className="card">
+        <div className="section-header" style={{ marginBottom:pacts.length > 0 ? 14 : 0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <Target size={16} color="var(--purple)"/>
+            <span className="section-title">ברית לימוד</span>
+          </div>
+          {friendObjs.length > 0 && (
+            <button className="friend-btn friend-btn-add" onClick={() => setShowPactModal(true)}>
+              <Plus size={13}/> ברית חדשה
+            </button>
+          )}
+        </div>
+        {pacts.length === 0 ? (
+          <div className="friends-empty" style={{ padding:'20px 0' }}>
+            <div className="friends-empty-icon">🤝</div>
+            <div className="friends-empty-text">אין ברית לימוד פעילה</div>
+            <div className="friends-empty-sub">
+              {friendObjs.length === 0
+                ? 'הוסף חבר כדי ליצור ברית לימוד'
+                : 'צור ברית עם חבר ולמדו יחד לקראת יעד משותף'}
+            </div>
+          </div>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {pacts.map(p => (
+              <PactCard key={p.id} pact={p} userId={user.id} onLeave={() => leavePact(p.id)}/>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showPactModal && (
+        <CreatePactModal
+          friends={friendObjs}
+          userId={user.id}
+          onCreated={() => { setShowPactModal(false); fetchPacts(); }}
+          onClose={() => setShowPactModal(false)}
+        />
+      )}
     </div>
   );
 }
 
+// ── Sub-components ────────────────────────────────────────
+
 function MiniAvatar({ profile, size = 52, isLive = false }) {
-  const cfg       = profile?.avatar_config    || {};
-  const purchased = profile?.avatar_purchased || {};
-  const pid       = cfg?.presetId;
+  const cfg        = profile?.avatar_config    || {};
+  const purchased  = profile?.avatar_purchased || {};
+  const pid        = cfg?.presetId;
   const ownedItems = (pid != null && purchased[pid]) ? purchased[pid] : [];
   const hasAvatar  = cfg?.baseSelected && pid != null;
 
   if (!hasAvatar) {
     return (
-      <div
-        className={`friend-avatar friend-avatar-lg${isLive ? ' friend-avatar-live' : ''}`}
-        style={{ width: size, height: size, flexShrink: 0 }}
-      >
+      <div className={`friend-avatar friend-avatar-lg${isLive ? ' friend-avatar-live' : ''}`}
+        style={{ width:size, height:size, flexShrink:0 }}>
         {profile?.name?.[0] ?? '?'}
       </div>
     );
   }
-
   return (
-    <div
-      className={`friend-mini-avatar-wrap${isLive ? ' friend-avatar-live' : ''}`}
-      style={{ width: size, height: Math.round(size * 1.22), flexShrink: 0 }}
-    >
-      <AvatarSVG config={cfg} purchased={ownedItems} />
+    <div className={`friend-mini-avatar-wrap${isLive ? ' friend-avatar-live' : ''}`}
+      style={{ width:size, height:Math.round(size*1.22), flexShrink:0 }}>
+      <AvatarSVG config={cfg} purchased={ownedItems}/>
     </div>
   );
 }
 
 function FriendCard({ other, myWeeklyMins, myName, isRemoving, onRemove }) {
   if (!other || !other.name) return null;
-  const isLive      = other.session_active;
-  const friendMins  = other.weekly_studied_minutes ?? 0;
-  const friendFirst = other.name.split(' ')[0];
+  const isLive     = other.session_active;
+  const friendMins = other.weekly_studied_minutes ?? 0;
+  const friendFirst= other.name.split(' ')[0];
 
   return (
-    <div className={`friend-card${isLive ? ' friend-card-live' : ''}`} style={{ alignItems: 'flex-start', paddingBlock: 10 }}>
-      <MiniAvatar profile={other} size={52} isLive={isLive} />
-      <div className="friend-card-info" style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    <div className={`friend-card${isLive ? ' friend-card-live' : ''}`} style={{ alignItems:'flex-start', paddingBlock:10 }}>
+      <MiniAvatar profile={other} size={52} isLive={isLive}/>
+      <div className="friend-card-info" style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
           <div className="friend-name">{other.name}</div>
           {isLive && <span className="friend-live-badge-sm">לומד</span>}
         </div>
         {isLive && other.session_course_name && (
-          <div className="friend-live-meta" style={{ marginBottom: 4 }}>
+          <div className="friend-live-meta" style={{ marginBottom:4 }}>
             <span className="friend-live-course">{other.session_course_name}</span>
             <span className="friend-live-elapsed">{fmtElapsed(other.session_started_at)}</span>
           </div>
@@ -377,14 +545,8 @@ function FriendCard({ other, myWeeklyMins, myName, isRemoving, onRemove }) {
           <span className="friend-weekly-them">{friendFirst}: {fmtHours(friendMins)}</span>
         </div>
       </div>
-      <button
-        className="friend-btn friend-btn-reject"
-        onClick={onRemove}
-        disabled={isRemoving}
-        title="הסר חבר"
-        style={{ marginTop: 2 }}
-      >
-        <X size={14} />
+      <button className="friend-btn friend-btn-reject" onClick={onRemove} disabled={isRemoving} title="הסר חבר" style={{ marginTop:2 }}>
+        <X size={14}/>
       </button>
     </div>
   );

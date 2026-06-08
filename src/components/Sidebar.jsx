@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, BookOpen, CheckSquare, Users, GraduationCap, LogOut, Smile, CalendarDays, Play, Square, Settings2 } from 'lucide-react';
+import { LayoutDashboard, BookOpen, CheckSquare, Users, GraduationCap, LogOut, Smile, CalendarDays, Play, Square, Settings2, Trophy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { useTimer, formatTime } from '../contexts/TimerContext';
 
 const navItems = [
-  { id: 'dashboard', label: 'דשבורד',       icon: LayoutDashboard },
-  { id: 'courses',   label: 'קורסים',       icon: BookOpen },
-  { id: 'tasks',     label: 'משימות',       icon: CheckSquare },
-  { id: 'schedule',  label: 'מערכת שעות',   icon: CalendarDays },
-  { id: 'friends',   label: 'חברים',        icon: Users },
-  { id: 'avatar',    label: 'סוכן לימודים', icon: Smile },
+  { id: 'dashboard',    label: 'דשבורד',       icon: LayoutDashboard },
+  { id: 'courses',      label: 'קורסים',       icon: BookOpen },
+  { id: 'tasks',        label: 'משימות',       icon: CheckSquare },
+  { id: 'schedule',     label: 'מערכת שעות',   icon: CalendarDays },
+  { id: 'friends',      label: 'חברים',        icon: Users },
+  { id: 'avatar',       label: 'סוכן לימודים', icon: Smile },
+  { id: 'achievements', label: 'הישגים',       icon: Trophy },
 ];
 
 export default function Sidebar({ currentPage, onNavigate }) {
