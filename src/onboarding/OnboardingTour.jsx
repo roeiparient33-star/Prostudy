@@ -90,14 +90,14 @@ export default function OnboardingTour({ page, setPage }) {
             <button className="tour-choice-btn" onClick={() => chooseTour('quick')}>
               <Zap size={16} />
               <div className="tour-choice-inner">
-                <span className="tour-choice-label">טור מהיר</span>
+                <span className="tour-choice-label">סיור מהיר</span>
                 <span className="tour-choice-sub">5 תחנות · בערך 2 דקות</span>
               </div>
             </button>
             <button className="tour-choice-btn" onClick={() => chooseTour('full')}>
               <List size={16} />
               <div className="tour-choice-inner">
-                <span className="tour-choice-label">טור מלא</span>
+                <span className="tour-choice-label">סיור מלא</span>
                 <span className="tour-choice-sub">11 תחנות · בערך 5 דקות</span>
               </div>
             </button>
