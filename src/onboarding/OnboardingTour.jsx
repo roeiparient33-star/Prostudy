@@ -34,7 +34,13 @@ export default function OnboardingTour({ page, setPage }) {
     if (!currentStep.target) { setRect(null); return; }
     measureRef.current = setTimeout(() => {
       const el = document.querySelector(currentStep.target);
-      setRect(el ? el.getBoundingClientRect() : null);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        // Re-measure after scroll settles
+        setTimeout(() => setRect(el.getBoundingClientRect()), 350);
+      } else {
+        setRect(null);
+      }
     }, 140);
   }, [stepIdx, active, page]); // eslint-disable-line
 
