@@ -18,6 +18,7 @@ import AvatarOnboarding from './components/AvatarOnboarding';
 import Achievements from './pages/Achievements';
 import OnboardingTour from './onboarding/OnboardingTour';
 import HelpButton from './onboarding/HelpButton';
+import PWAInstallBanner from './components/PWAInstallBanner';
 
 // Capture referral code from URL on app load
 const urlRef = new URLSearchParams(window.location.search).get('ref');
@@ -83,6 +84,7 @@ export default function App() {
       </div>
       <OnboardingTour page={page} setPage={setPage}/>
       <HelpButton page={page}/>
+      <PWAInstallBanner/>
     </>
   );
 }
