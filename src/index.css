@@ -3808,9 +3808,7 @@ select:focus-visible {
 .tour-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 10, 20, 0.72);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(10, 10, 20, 0.55);
   z-index: 55;
   animation: tourFadeIn 250ms ease;
 }
