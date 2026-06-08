@@ -27,15 +27,21 @@ function fmtHours(mins) {
 
 // ── Study Pact Modal ──────────────────────────────────────
 function CreatePactModal({ friends, userId, onCreated, onClose }) {
-  const [name,    setName]    = useState('');
-  const [target,  setTarget]  = useState(10);
-  const [friendId,setFriendId]= useState('');
-  const [saving,  setSaving]  = useState(false);
-  const [err,     setErr]     = useState('');
+  const [name,        setName]        = useState('');
+  const [target,      setTarget]      = useState(10);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [saving,      setSaving]      = useState(false);
+  const [err,         setErr]         = useState('');
+
+  function toggleFriend(id) {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  }
 
   async function handleCreate(e) {
     e.preventDefault();
-    if (!name.trim() || !friendId) { setErr('יש למלא שם ולבחור חבר'); return; }
+    if (!name.trim() || selectedIds.length === 0) { setErr('יש למלא שם ולבחור לפחות חבר אחד'); return; }
     setSaving(true);
     const { data: pact, error } = await supabase
       .from('study_pacts')
@@ -43,9 +49,11 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
       .select()
       .single();
     if (error || !pact) { setErr('שגיאה ביצירת הברית'); setSaving(false); return; }
-    // Insert creator first so RLS sees them as member before adding friend
+    // Insert creator first so RLS passes, then each friend
     await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: userId });
-    await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: friendId });
+    for (const fid of selectedIds) {
+      await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: fid });
+    }
     setSaving(false);
     onCreated();
   }
@@ -70,16 +78,38 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
               <input className="modal-input" type="number" min={1} max={80} value={target} onChange={e=>setTarget(Number(e.target.value))} dir="ltr"/>
             </div>
             <div className="modal-field">
-              <label className="modal-label">חבר לברית</label>
-              <select className="modal-input" value={friendId} onChange={e=>setFriendId(e.target.value)}>
-                <option value="">בחר חבר...</option>
-                {friends.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-              </select>
+              <label className="modal-label">
+                חברים לברית
+                {selectedIds.length > 0 && (
+                  <span style={{ marginRight:6, fontWeight:500, color:'var(--accent)', fontSize:12 }}>
+                    ({selectedIds.length} נבחרו)
+                  </span>
+                )}
+              </label>
+              <div className="pact-friends-list">
+                {friends.map(f => {
+                  const checked = selectedIds.includes(f.id);
+                  return (
+                    <label key={f.id} className={`pact-friend-check${checked ? ' selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleFriend(f.id)}
+                        style={{ display:'none' }}
+                      />
+                      <div className={`pact-check-box${checked ? ' checked' : ''}`}>
+                        {checked && <Check size={11} strokeWidth={3}/>}
+                      </div>
+                      <span>{f.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
             {err && <div className="auth-error">{err}</div>}
             <div className="modal-actions">
-              <button type="submit" className="modal-btn-primary" disabled={saving || !name.trim() || !friendId}>
-                {saving ? 'יוצר...' : 'צור ברית'}
+              <button type="submit" className="modal-btn-primary" disabled={saving || !name.trim() || selectedIds.length === 0}>
+                {saving ? 'יוצר...' : `צור ברית${selectedIds.length > 1 ? ` (${selectedIds.length + 1} חברים)` : ''}`}
               </button>
               <button type="button" className="modal-btn-ghost" onClick={onClose}>ביטול</button>
             </div>
