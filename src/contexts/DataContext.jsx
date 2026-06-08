@@ -127,6 +127,16 @@ export function DataProvider({ children }) {
     if (row) setExams(p => [...p, toExam(row)]);
   }
 
+  async function updateExam(id, data) {
+    const { data: row } = await supabase.from('exams').update({
+      title:     data.title,
+      exam_date: data.date,
+      location:  data.location || '',
+      course_id: data.courseId || null,
+    }).eq('id', id).select().single();
+    if (row) setExams(p => p.map(e => e.id === id ? toExam(row) : e));
+  }
+
   async function removeExam(id) {
     await supabase.from('exams').delete().eq('id', id);
     setExams(p => p.filter(e => e.id !== id));
@@ -137,7 +147,7 @@ export function DataProvider({ children }) {
       courses, tasks, exams, courseStats, dataLoading: loading,
       addCourse, updateCourse, removeCourse,
       addTask, updateTask, removeTask,
-      addExam, removeExam,
+      addExam, updateExam, removeExam,
     }}>
       {children}
     </DataContext.Provider>

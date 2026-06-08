@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Target, ListChecks, Clock, BookOpen, CalendarDays, Smile, Trophy, Flame } from 'lucide-react';
+import { Plus, X, Target, ListChecks, Clock, BookOpen, CalendarDays, Smile, Trophy, Flame, Pencil } from 'lucide-react';
 import ProgressBar from '../components/ProgressBar';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
@@ -19,8 +19,9 @@ function fmtDate(d) { return new Date(d).toLocaleDateString('he-IL',{day:'numeri
 
 export default function Dashboard({ onNavigate }) {
   const { profile } = useAuth();
-  const { courses, tasks, exams, courseStats, updateTask, addExam, removeExam } = useData();
-  const [showAddExam, setAdd] = useState(false);
+  const { courses, tasks, exams, courseStats, updateTask, addExam, updateExam, removeExam } = useData();
+  const [showAddExam, setAdd]     = useState(false);
+  const [editingExam, setEditing] = useState(null);
 
   const firstName      = profile?.name?.split(' ')[0] ?? '';
   const completedCount = tasks.filter(t => t.completed).length;
@@ -217,9 +218,14 @@ export default function Dashboard({ onNavigate }) {
                         <div className="exam-date">{fmtDate(exam.date)}{exam.location && ` · ${exam.location}`}</div>
                       </div>
                       {course && <div style={{width:7,height:7,borderRadius:'50%',background:course.color,flexShrink:0}}/>}
-                      <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:2,flexShrink:0}} onClick={() => removeExam(exam.id)}>
-                        <X size={12}/>
-                      </button>
+                      <div style={{display:'flex',gap:1,flexShrink:0}}>
+                        <button className="task-action-btn" onClick={() => setEditing(exam)} title="ערוך מבחן" aria-label="ערוך מבחן">
+                          <Pencil size={11}/>
+                        </button>
+                        <button className="task-action-btn task-action-btn-delete" onClick={() => removeExam(exam.id)} title="מחק" aria-label="מחק מבחן">
+                          <X size={12}/>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -239,10 +245,18 @@ export default function Dashboard({ onNavigate }) {
       </div>
 
       {showAddExam && (
-        <AddExamModal
+        <ExamModal
           courses={courses}
-          onAdd={async data => { await addExam(data); setAdd(false); }}
+          onSave={async data => { await addExam(data); setAdd(false); }}
           onClose={() => setAdd(false)}
+        />
+      )}
+      {editingExam && (
+        <ExamModal
+          courses={courses}
+          exam={editingExam}
+          onSave={async data => { await updateExam(editingExam.id, data); setEditing(null); }}
+          onClose={() => setEditing(null)}
         />
       )}
     </div>
@@ -274,19 +288,20 @@ function AvatarDashCard({ profile }) {
   );
 }
 
-function AddExamModal({ courses, onAdd, onClose }) {
-  const today = new Date().toISOString().split('T')[0];
-  const [title,    setTitle]    = useState('');
-  const [date,     setDate]     = useState(today);
-  const [location, setLocation] = useState('');
-  const [courseId, setCourseId] = useState('');
+function ExamModal({ courses, exam, onSave, onClose }) {
+  const isEdit = !!exam;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [title,    setTitle]    = useState(exam?.title    ?? '');
+  const [date,     setDate]     = useState(exam?.date     ?? todayStr);
+  const [location, setLocation] = useState(exam?.location ?? '');
+  const [courseId, setCourseId] = useState(exam?.courseId ? String(exam.courseId) : '');
   const [saving,   setSaving]   = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!title.trim() || !date) return;
     setSaving(true);
-    await onAdd({ title: title.trim(), date, location: location.trim(), courseId: courseId || null });
+    await onSave({ title: title.trim(), date, location: location.trim(), courseId: courseId || null });
     setSaving(false);
   }
 
@@ -295,8 +310,8 @@ function AddExamModal({ courses, onAdd, onClose }) {
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box">
         <div className="modal-head">
-          <span className="modal-head-title">הוספת מבחן</span>
-          <button className="modal-close-btn" onClick={onClose}><X size={17}/></button>
+          <span className="modal-head-title">{isEdit ? 'עריכת מבחן' : 'הוספת מבחן'}</span>
+          <button className="modal-close-btn" onClick={onClose} aria-label="סגור"><X size={17}/></button>
         </div>
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-field">
@@ -322,7 +337,7 @@ function AddExamModal({ courses, onAdd, onClose }) {
           </div>
           <div className="modal-actions">
             <button type="submit" className="modal-btn-primary" disabled={!title.trim() || saving}>
-              {saving ? 'שומר...' : 'הוסף מבחן'}
+              {saving ? 'שומר...' : isEdit ? 'שמור שינויים' : 'הוסף מבחן'}
             </button>
             <button type="button" className="modal-btn-ghost" onClick={onClose}>ביטול</button>
           </div>
