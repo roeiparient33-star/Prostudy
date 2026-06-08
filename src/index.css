@@ -4426,39 +4426,41 @@ select:focus-visible {
   }
 
   .pwa-banner-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #FF6524, #FF9A5C);
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(255,101,36,0.35);
+    border: 1.5px solid #F1F5F9;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
   .pwa-banner-icon img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-  }
-  .pwa-banner-icon-fallback {
-    font-size: 16px;
-    font-weight: 900;
-    color: #fff;
-    letter-spacing: -0.5px;
+    object-fit: contain;
   }
 
-  .pwa-banner-title {
-    font-size: 16px;
+  .pwa-banner-app-name {
+    font-size: 13px;
     font-weight: 800;
+    color: var(--accent);
+    letter-spacing: 0.2px;
+    margin-bottom: 1px;
+  }
+  .pwa-banner-title {
+    font-size: 15px;
+    font-weight: 700;
     color: #0F172A;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.2px;
   }
   .pwa-banner-sub {
     font-size: 12px;
     color: #94A3B8;
-    margin-top: 2px;
+    margin-top: 1px;
   }
 
   /* Steps list */

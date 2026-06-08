@@ -66,11 +66,11 @@ export default function PWAInstallBanner() {
       {/* App icon + title */}
       <div className="pwa-banner-head">
         <div className="pwa-banner-icon">
-          <img src="/logo.png" alt="ProStudy" onError={e => e.target.style.display='none'} />
-          <span className="pwa-banner-icon-fallback">PS</span>
+          <img src="/logo.png" alt="ProStudy" />
         </div>
         <div>
-          <div className="pwa-banner-title">הוסף ל-מסך הבית</div>
+          <div className="pwa-banner-app-name">ProStudy</div>
+          <div className="pwa-banner-title">הוסף למסך הבית</div>
           <div className="pwa-banner-sub">גישה מהירה ללא דפדפן</div>
         </div>
       </div>
@@ -92,7 +92,9 @@ export default function PWAInstallBanner() {
           </div>
           <div className="pwa-banner-step">
             <span className="pwa-step-num">3</span>
-            <span>לחץ "הוסף" — וזהו 🎉</span>
+            <span>ודא שהשם הוא</span>
+            <span className="pwa-step-bold">ProStudy</span>
+            <span>ולחץ "הוסף" 🎉</span>
           </div>
         </div>
       )}
