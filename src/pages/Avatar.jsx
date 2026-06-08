@@ -32,7 +32,7 @@ export default function Avatar() {
   const [presetsPurchased, setPresetsP]   = useState(profile?.presets_purchased || []);
   const [credits, setCredits]             = useState(profile?.credits           || 0);
 
-  const [tab, setTab]         = useState(cfg.baseSelected ? 'shop' : 'base');
+  const [tab, setTab]         = useState('base');
   const [shopCat, setShopCat] = useState('head');
   const [hoverPreview, setHoverPreview] = useState(null); // { cfg, purchased }
   const [saving, setSaving]   = useState(false);

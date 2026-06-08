@@ -6,12 +6,6 @@ import { useData } from '../contexts/DataContext';
 import { supabase } from '../lib/supabase';
 
 const RARITY_GLOW = { common:'#9CA3AF', uncommon:'#3B82F6', rare:'#7C3AED', legendary:'#F59E0B' };
-const RARITY_LABELS = {
-  common:    { label:'נפוץ',     cls:'rarity-common'   },
-  uncommon:  { label:'לא נפוץ', cls:'rarity-uncommon' },
-  rare:      { label:'נדיר',    cls:'rarity-rare'     },
-  legendary: { label:'אגדי',    cls:'rarity-legendary'},
-};
 const CATEGORY_LABELS = {
   milestone:'🏅 ציון דרך', streak:'🔥 רצף', time:'⏱️ זמן',
   social:'👥 חברתי', dedication:'💪 מסירות',
@@ -163,12 +157,10 @@ export default function Achievements() {
           <div className="achievements-section-title"><span>✨</span><span>הושגו ({unlocked.length})</span></div>
           <div className="achievements-grid">
             {unlocked.map(a => {
-              const rl = RARITY_LABELS[a.rarity] ?? RARITY_LABELS.common;
               const gc = RARITY_GLOW[a.rarity] ?? '#9CA3AF';
               return (
                 <div key={a.id} className={`achievement-card unlocked ${a.rarity}`}>
                   <div className="achievement-card-glow" style={{background:gc}}/>
-                  <div className={`achievement-rarity-badge ${rl.cls}`}>{rl.label}</div>
                   <div className="achievement-card-icon-wrap" style={{background:`${gc}18`,border:`1px solid ${gc}30`}}>
                     {a.icon}
                   </div>
@@ -193,13 +185,11 @@ export default function Achievements() {
         <div className="achievements-section-title"><span>🔒</span><span>נעולים ({locked.length})</span></div>
         <div className="achievements-grid">
           {locked.map(a => {
-            const rl = RARITY_LABELS[a.rarity] ?? RARITY_LABELS.common;
             const gc = RARITY_GLOW[a.rarity] ?? '#9CA3AF';
             const {cur, tot} = a.prog(ctx);
             const pctA = tot ? Math.round((cur/tot)*100) : 0;
             return (
               <div key={a.id} className="achievement-card locked">
-                <div className={`achievement-rarity-badge ${rl.cls}`} style={{opacity:.6}}>{rl.label}</div>
                 <div className="achievement-card-icon-wrap" style={{background:'#F3F4F6'}}>{a.icon}</div>
                 <div className="achievement-card-title">{a.title}</div>
                 <div className="achievement-card-desc">{a.desc}</div>

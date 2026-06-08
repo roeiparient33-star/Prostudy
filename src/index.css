@@ -3055,7 +3055,11 @@ select:focus-visible {
   }
 
   /* ── Dashboard ── */
-  .db-page { gap: 14px; }
+  .db-page {
+    height: auto;
+    overflow: visible;
+    gap: 14px;
+  }
   .db-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .db-stat  { padding: 14px; }
   .db-stat-value { font-size: 22px; }
