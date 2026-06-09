@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Bell, Settings, X } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ModalPortal from './ModalPortal';
+import NotificationBell from './NotificationBell';
 
 export default function Topbar({ title }) {
   const { profile, updateProfile } = useAuth();
@@ -20,9 +21,7 @@ export default function Topbar({ title }) {
           <button className="topbar-icon-btn" title="הגדרות" onClick={() => setShowSettings(true)}>
             <Settings size={17}/>
           </button>
-          <button className="topbar-icon-btn" title="התראות">
-            <Bell size={17}/>
-          </button>
+          <NotificationBell/>
           <div className="topbar-avatar" title={profile?.name} onClick={() => setShowSettings(true)}>
             {initials}
           </div>

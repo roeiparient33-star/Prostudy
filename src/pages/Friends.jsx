@@ -49,10 +49,10 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
       .select()
       .single();
     if (error || !pact) { setErr('שגיאה ביצירת הצוות'); setSaving(false); return; }
-    // Insert creator first so RLS passes, then each friend
-    await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: userId });
+    // Creator inserted first as 'accepted' (RLS passes), friends as 'pending'
+    await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: userId, status: 'accepted' });
     for (const fid of selectedIds) {
-      await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: fid });
+      await supabase.from('pact_members').insert({ pact_id: pact.id, user_id: fid, status: 'pending' });
     }
     setSaving(false);
     onCreated();
@@ -339,7 +339,7 @@ export default function Friends() {
 
   const fetchPacts = useCallback(async () => {
     const { data: memberships } = await supabase
-      .from('pact_members').select('pact_id').eq('user_id', user.id);
+      .from('pact_members').select('pact_id').eq('user_id', user.id).eq('status', 'accepted');
     const ids = (memberships || []).map(m => m.pact_id);
     if (ids.length === 0) { setPacts([]); return; }
     const { data: pactsData } = await supabase
