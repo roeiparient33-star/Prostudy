@@ -1092,6 +1092,51 @@ body {
   font-weight: 500;
 }
 
+/* Completed tasks collapsible section */
+.tasks-completed-section {
+  margin-top: 20px;
+  border-top: 1px solid var(--border-light);
+  padding-top: 12px;
+}
+.tasks-completed-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 150ms;
+}
+.tasks-completed-toggle:hover { color: var(--text-2); }
+
+/* Schedule course chips */
+.sch-course-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.sch-course-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1.5px solid transparent;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms;
+}
+.sch-course-chip:hover { background: var(--bg-hover); }
+
 .tasks-count-label {
   font-size: 13px;
   color: var(--text-3);

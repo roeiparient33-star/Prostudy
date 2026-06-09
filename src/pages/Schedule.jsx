@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Plus, X, Clock, CalendarDays } from 'lucide-react';
 import ModalPortal from '../components/ModalPortal';
+import { useData } from '../contexts/DataContext';
 
 const DAYS   = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי'];
 const HOURS  = [8,9,10,11,12,13,14,15,16,17,18,19,20];
@@ -29,7 +30,8 @@ let nextId = Date.now();
 
 export default function Schedule() {
   const [events, setEvents] = useState(loadEvents);
-  const [modal,  setModal]  = useState(null); // { day, hour } or { editing: event }
+  const [modal,  setModal]  = useState(null);
+  const { courses } = useData(); // { day, hour } or { editing: event }
 
   const addEvent = useCallback((ev) => {
     const updated = [...events, { ...ev, id: ++nextId }];
@@ -143,6 +145,7 @@ export default function Schedule() {
         <AddEventModal
           defaultDay={modal.day}
           defaultHour={modal.hour}
+          courses={courses}
           onAdd={addEvent}
           onClose={() => setModal(null)}
         />
@@ -191,7 +194,7 @@ function TimePicker({ value, onChange }) {
   );
 }
 
-function AddEventModal({ defaultDay, defaultHour, onAdd, onClose }) {
+function AddEventModal({ defaultDay, defaultHour, courses, onAdd, onClose }) {
   const [title,     setTitle]     = useState('');
   const [day,       setDay]       = useState(defaultDay);
   const [startTime, setStartTime] = useState(`${pad2(defaultHour)}:00`);
@@ -200,7 +203,12 @@ function AddEventModal({ defaultDay, defaultHour, onAdd, onClose }) {
   const [room,      setRoom]      = useState('');
   const [color,     setColor]     = useState('#4F7EF7');
 
-  const COLORS = ['#4F7EF7','#9B71F7','#28C96F','#F14040','#FF6524','#F5A623','#1A1110'];
+  const COLORS = ['#4F7EF7','#9B71F7','#28C96F','#F14040','#FF6524','#F5A623','#14B8A6','#EC4899','#1A1110'];
+
+  function pickCourse(course) {
+    setTitle(course.name);
+    setColor(course.color);
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -219,6 +227,26 @@ function AddEventModal({ defaultDay, defaultHour, onAdd, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
+          {courses.length > 0 && (
+            <div className="modal-field">
+              <label className="modal-label">בחר מקורס קיים (אופציונלי)</label>
+              <div className="sch-course-chips">
+                {courses.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className="sch-course-chip"
+                    style={{ borderColor: title === c.name ? c.color : 'transparent', background: title === c.name ? `${c.color}18` : 'var(--bg-2)' }}
+                    onClick={() => pickCourse(c)}
+                  >
+                    <span style={{ width:8, height:8, borderRadius:'50%', background:c.color, flexShrink:0 }}/>
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="modal-field">
             <label className="modal-label">שם השיעור *</label>
             <input className="modal-input" value={title} onChange={e => setTitle(e.target.value)} placeholder="לדוגמה: אלגוריתמים" required autoFocus/>

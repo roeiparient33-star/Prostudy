@@ -88,6 +88,7 @@ export const examStore = {
 
 export const COURSE_COLORS = [
   '#4F7EF7','#9B71F7','#28C96F','#F14040','#FF6524','#F5A623','#4A90D9','#E87CA0',
+  '#14B8A6','#F97316','#8B5CF6','#EC4899','#84CC16','#6366F1','#0EA5E9','#A78BFA',
 ];
 export const COURSE_EMOJIS = [
   '📚','⚡','🎲','🖥️','📐','🔬','🧮','🎨','🏛️','🌍','💻','🎵',

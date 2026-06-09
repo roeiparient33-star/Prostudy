@@ -5,12 +5,14 @@ import { useData } from '../contexts/DataContext';
 import { COURSE_COLORS, COURSE_EMOJIS } from '../data/localStore';
 import { taskTypeColors, taskTypeLabels } from '../data/mockData';
 import ModalPortal from '../components/ModalPortal';
+import { TaskModal } from './Tasks';
 
 export default function Courses() {
-  const { courses, tasks, courseStats, addCourse, updateCourse, removeCourse, updateTask } = useData();
-  const [selectedId,    setSelectedId] = useState(null);
-  const [showModal,     setShowModal]  = useState(false);
-  const [editingCourse, setEditing]    = useState(null);
+  const { courses, tasks, courseStats, addCourse, updateCourse, removeCourse, updateTask, addTask } = useData();
+  const [selectedId,    setSelectedId]   = useState(null);
+  const [showModal,     setShowModal]    = useState(false);
+  const [editingCourse, setEditing]      = useState(null);
+  const [addingTaskFor, setAddingTaskFor] = useState(null); // courseId
 
   const selectedCourse = courses.find(c => c.id === selectedId) ?? null;
 
@@ -126,7 +128,14 @@ export default function Courses() {
                 {(courseStats[selectedCourse.id]?.completed || 0)} מתוך {(courseStats[selectedCourse.id]?.total || 0)} הושלמו
               </div>
             </div>
-            <button style={{ background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:4,marginRight:'auto' }} onClick={() => setSelectedId(null)}>
+            <button
+              className="page-add-btn"
+              style={{ marginRight:'auto', padding:'6px 12px', fontSize:12 }}
+              onClick={() => setAddingTaskFor(selectedCourse.id)}
+            >
+              <Plus size={13}/> הוסף משימה
+            </button>
+            <button style={{ background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:4 }} onClick={() => setSelectedId(null)}>
               <X size={18}/>
             </button>
           </div>
@@ -164,6 +173,14 @@ export default function Courses() {
 
       {showModal     && <CourseModal onSave={handleAdd}                          onClose={() => setShowModal(false)}/>}
       {editingCourse && <CourseModal course={editingCourse} onSave={handleEdit}  onClose={() => setEditing(null)}/>}
+      {addingTaskFor && (
+        <TaskModal
+          courses={courses}
+          defaultCourseId={addingTaskFor}
+          onSave={async (data) => { await addTask(data); setAddingTaskFor(null); }}
+          onClose={() => setAddingTaskFor(null)}
+        />
+      )}
     </div>
   );
 }

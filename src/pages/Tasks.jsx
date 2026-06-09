@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, X, CheckSquare, SearchX, Pencil } from 'lucide-react';
+import { Plus, X, CheckSquare, SearchX, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { taskTypeColors, taskTypeLabels, priorityLabels } from '../data/mockData';
 import ModalPortal from '../components/ModalPortal';
@@ -7,10 +7,9 @@ import ModalPortal from '../components/ModalPortal';
 const TODAY = new Date().toISOString().split('T')[0];
 
 const STATUS_FILTERS = [
-  { id:'all',       label:'הכל'     },
-  { id:'today',     label:'להיום'   },
-  { id:'open',      label:'פתוחות'  },
-  { id:'completed', label:'הושלמו'  },
+  { id:'open',  label:'פתוחות' },
+  { id:'today', label:'להיום'  },
+  { id:'all',   label:'הכל'    },
 ];
 const TYPE_FILTERS = [
   { id:'all',      label:'כל הסוגים'  },
@@ -28,10 +27,11 @@ const PRIORITY_COLORS = {
 
 export default function Tasks() {
   const { courses, tasks, addTask, updateTask, removeTask } = useData();
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter,   setTypeFilter]   = useState('all');
-  const [showModal,    setShowModal]    = useState(false);
-  const [editingTask,  setEditingTask]  = useState(null);
+  const [statusFilter,    setStatusFilter]    = useState('open');
+  const [typeFilter,      setTypeFilter]      = useState('all');
+  const [showModal,       setShowModal]       = useState(false);
+  const [editingTask,     setEditingTask]     = useState(null);
+  const [showCompleted,   setShowCompleted]   = useState(false);
 
   const courseById = Object.fromEntries(courses.map(c => [c.id, c]));
 
@@ -51,12 +51,16 @@ export default function Tasks() {
 
   const filtered = useMemo(() => tasks.filter(t => {
     const statusOk =
-      statusFilter === 'all'       ? true :
-      statusFilter === 'today'     ? t.dueDate === TODAY :
+      statusFilter === 'all'       ? !t.completed :
+      statusFilter === 'today'     ? t.dueDate === TODAY && !t.completed :
       statusFilter === 'open'      ? !t.completed :
       statusFilter === 'completed' ? t.completed : true;
     return statusOk && (typeFilter === 'all' || t.type === typeFilter);
   }), [tasks, statusFilter, typeFilter]);
+
+  const completedFiltered = useMemo(() => tasks.filter(t =>
+    t.completed && (typeFilter === 'all' || t.type === typeFilter)
+  ), [tasks, typeFilter]);
 
   return (
     <div className="page-enter">
@@ -112,63 +116,29 @@ export default function Tasks() {
           {filtered.length === 0 ? (
             <div className="tasks-empty">
               <SearchX size={36} color="var(--text-3)" style={{margin:'0 auto 12px', display:'block'}}/>
-              <div className="tasks-empty-text">אין משימות התואמות לפילטר שנבחר</div>
+              <div className="tasks-empty-text">אין משימות פתוחות — כל הכבוד! 🎉</div>
             </div>
           ) : (
             <div className="tasks-list-full">
-              {filtered.map(task => {
-                const tc     = taskTypeColors[task.type] || taskTypeColors.homework;
-                const pc     = PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.medium;
-                const course = courseById[task.courseId];
-                const isToday = task.dueDate === TODAY;
-                return (
-                  <div key={task.id} className={`task-item${task.completed?' completed':''}`} style={{ borderRight:`3px solid ${task.completed?'var(--green)':course?.color??'var(--border)'}` }}>
-                    <div
-                      className={`task-check${task.completed?' checked':''}`}
-                      onClick={() => updateTask(task.id, { completed: !task.completed })}
-                      style={{cursor:'pointer'}}
-                    >
-                      {task.completed && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8L9 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                    </div>
-                    <div className="task-body">
-                      <div className="task-title">{task.title}</div>
-                      <div className="task-meta">
-                        <span className="task-badge" style={{ background:tc.bg, color:tc.text, borderColor:tc.border }}>{taskTypeLabels[task.type]}</span>
-                        <span className="task-badge" style={{ background:pc.bg, color:pc.text, borderColor:pc.border }}>{priorityLabels[task.priority]}</span>
-                        {course && (
-                          <span style={{ display:'flex', alignItems:'center', gap:4 }}>
-                            <span className="task-course-dot" style={{ background:course.color }}/>
-                            <span className="task-date">{course.name}</span>
-                          </span>
-                        )}
-                        {task.dueDate && (
-                          <span className="task-date">
-                            {isToday ? '📌 להיום' : new Date(task.dueDate).toLocaleDateString('he-IL', {day:'numeric', month:'long'})}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display:'flex', gap:2, flexShrink:0 }}>
-                      <button
-                        className="task-action-btn"
-                        onClick={() => openEdit(task)}
-                        title="ערוך משימה"
-                        aria-label="ערוך משימה"
-                      >
-                        <Pencil size={13}/>
-                      </button>
-                      <button
-                        className="task-action-btn task-action-btn-delete"
-                        onClick={() => removeTask(task.id)}
-                        title="מחק"
-                        aria-label="מחק משימה"
-                      >
-                        <X size={14}/>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              {filtered.map(task => <TaskRow key={task.id} task={task} courseById={courseById} updateTask={updateTask} openEdit={openEdit} removeTask={removeTask}/>)}
+            </div>
+          )}
+
+          {/* Completed section — collapsible */}
+          {completedFiltered.length > 0 && (
+            <div className="tasks-completed-section">
+              <button
+                className="tasks-completed-toggle"
+                onClick={() => setShowCompleted(p => !p)}
+              >
+                {showCompleted ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
+                <span>הושלמו ({completedFiltered.length})</span>
+              </button>
+              {showCompleted && (
+                <div className="tasks-list-full" style={{ marginTop: 8 }}>
+                  {completedFiltered.map(task => <TaskRow key={task.id} task={task} courseById={courseById} updateTask={updateTask} openEdit={openEdit} removeTask={removeTask}/>)}
+                </div>
+              )}
             </div>
           )}
         </>
@@ -184,10 +154,46 @@ export default function Tasks() {
   );
 }
 
-function TaskModal({ courses, task, onSave, onClose }) {
+function TaskRow({ task, courseById, updateTask, openEdit, removeTask }) {
+  const tc      = taskTypeColors[task.type] || taskTypeColors.homework;
+  const pc      = PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.medium;
+  const course  = courseById[task.courseId];
+  const isToday = task.dueDate === TODAY;
+  return (
+    <div className={`task-item${task.completed?' completed':''}`} style={{ borderRight:`3px solid ${task.completed?'var(--green)':course?.color??'var(--border)'}` }}>
+      <div className={`task-check${task.completed?' checked':''}`} onClick={() => updateTask(task.id, { completed: !task.completed })} style={{cursor:'pointer'}}>
+        {task.completed && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8L9 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      </div>
+      <div className="task-body">
+        <div className="task-title">{task.title}</div>
+        <div className="task-meta">
+          <span className="task-badge" style={{ background:tc.bg, color:tc.text, borderColor:tc.border }}>{taskTypeLabels[task.type]}</span>
+          <span className="task-badge" style={{ background:pc.bg, color:pc.text, borderColor:pc.border }}>{priorityLabels[task.priority]}</span>
+          {course && (
+            <span style={{ display:'flex', alignItems:'center', gap:4 }}>
+              <span className="task-course-dot" style={{ background:course.color }}/>
+              <span className="task-date">{course.name}</span>
+            </span>
+          )}
+          {task.dueDate && (
+            <span className="task-date">
+              {isToday ? '📌 להיום' : new Date(task.dueDate).toLocaleDateString('he-IL', {day:'numeric', month:'long'})}
+            </span>
+          )}
+        </div>
+      </div>
+      <div style={{ display:'flex', gap:2, flexShrink:0 }}>
+        <button className="task-action-btn" onClick={() => openEdit(task)} title="ערוך" aria-label="ערוך משימה"><Pencil size={13}/></button>
+        <button className="task-action-btn task-action-btn-delete" onClick={() => removeTask(task.id)} title="מחק" aria-label="מחק משימה"><X size={14}/></button>
+      </div>
+    </div>
+  );
+}
+
+export function TaskModal({ courses, task, onSave, onClose, defaultCourseId }) {
   const isEdit = !!task;
   const [title,    setTitle]    = useState(task?.title    ?? '');
-  const [courseId, setCourseId] = useState(task?.courseId ? String(task.courseId) : '');
+  const [courseId, setCourseId] = useState(task?.courseId ? String(task.courseId) : defaultCourseId ? String(defaultCourseId) : '');
   const [type,     setType]     = useState(task?.type     ?? 'homework');
   const [dueDate,  setDueDate]  = useState(task?.dueDate  ?? TODAY);
   const [priority, setPriority] = useState(task?.priority ?? 'medium');
