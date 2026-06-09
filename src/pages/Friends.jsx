@@ -122,7 +122,10 @@ function CreatePactModal({ friends, userId, onCreated, onClose }) {
 
 // ── Pact Card ──────────────────────────────────────────────
 function PactCard({ pact, userId, onLeave, onTasksChanged }) {
-  const members   = pact.pact_members || [];
+  const allMembers = pact.pact_members || [];
+  // Only show accepted members in progress; pending = awaiting confirmation
+  const members    = allMembers.filter(m => !m.status || m.status === 'accepted');
+  const pending    = allMembers.filter(m => m.status === 'pending');
   const tasks     = pact.pact_tasks   || [];
   const target    = pact.target_hours_per_week * 60;
   const isCreator = pact.creator_id === userId;
@@ -198,6 +201,19 @@ function PactCard({ pact, userId, onLeave, onTasksChanged }) {
             </div>
           );
         })}
+
+        {/* Pending invitations — shown only to creator */}
+        {isCreator && pending.length > 0 && (
+          <div className="pact-pending-list">
+            {pending.map(m => (
+              <div key={m.user_id} className="pact-pending-row">
+                <span className="pact-pending-dot"/>
+                <span className="pact-pending-name">{m.profiles?.name || '?'}</span>
+                <span className="pact-pending-label">ממתין לאישור</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Tasks section */}
@@ -345,7 +361,7 @@ export default function Friends() {
     const { data: pactsData } = await supabase
       .from('study_pacts')
       .select(`id, name, target_hours_per_week, creator_id,
-        pact_members(user_id, profiles(id, name, weekly_studied_minutes)),
+        pact_members(user_id, status, profiles(id, name, weekly_studied_minutes)),
         pact_tasks(id, title, created_by, pact_task_completions(user_id))`)
       .in('id', ids);
     setPacts(pactsData || []);
