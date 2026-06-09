@@ -1838,6 +1838,58 @@ select:focus-visible {
 
 .schedule-card { padding: 16px; overflow-x: auto; }
 
+/* Week navigation bar */
+.sch-week-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  direction: rtl;
+}
+.sch-week-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms, color 150ms;
+}
+.sch-week-btn:hover { background: var(--bg-hover); color: var(--text); }
+.sch-week-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 120px;
+}
+.sch-week-today-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.sch-today-btn {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: none;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 150ms;
+}
+.sch-today-btn:hover { background: rgba(255,101,36,0.18); }
+
 .sch-wrap { min-width: 700px; }
 
 .sch-header-row {
@@ -1853,14 +1905,78 @@ select:focus-visible {
   color: var(--text-3);
 }
 .sch-day-hd {
-  text-align: center;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--text-2);
-  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
   border-radius: var(--radius-sm);
   background: var(--bg-main);
 }
+.sch-day-hd.sch-today {
+  background: var(--accent-dim);
+}
+.sch-day-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.sch-day-date {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 500;
+}
+.sch-day-hd.sch-today .sch-day-name { color: var(--accent); }
+.sch-today-date { color: var(--accent) !important; font-weight: 700 !important; }
+
+/* Task deadline dots in header */
+.sch-task-dots {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  margin-top: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.sch-task-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  display: block;
+  flex-shrink: 0;
+}
+.sch-task-dot-more {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+/* Today column highlight */
+.sch-col-today {
+  background: rgba(255,101,36,0.03);
+}
+
+/* Current time line */
+.sch-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--red);
+  z-index: 5;
+  pointer-events: none;
+}
+.sch-now-dot {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+}
+
 .sch-body {
   display: grid;
   grid-template-columns: 52px repeat(6, 1fr);
