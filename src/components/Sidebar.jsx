@@ -3,6 +3,29 @@ import { LayoutDashboard, BookOpen, CheckSquare, Users, GraduationCap, LogOut, S
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { useTimer, formatTime } from '../contexts/TimerContext';
+import UserAvatar from './UserAvatar';
+
+// Circular countdown ring for pomodoro phases
+function TimerRing({ secsLeft, totalSecs, isBreak }) {
+  const R = 40;
+  const C = 2 * Math.PI * R;
+  const frac = totalSecs > 0 ? Math.max(0, Math.min(1, secsLeft / totalSecs)) : 0;
+  return (
+    <div className="timer-ring-wrap">
+      <svg width="104" height="104" viewBox="0 0 104 104">
+        <circle cx="52" cy="52" r={R} className="timer-ring-track"/>
+        <circle
+          cx="52" cy="52" r={R}
+          className={`timer-ring-fill${isBreak ? ' break' : ''}`}
+          strokeDasharray={C}
+          strokeDashoffset={C * (1 - frac)}
+          transform="rotate(-90 52 52)"
+        />
+      </svg>
+      <div className="timer-ring-time">{formatTime(secsLeft)}</div>
+    </div>
+  );
+}
 
 const navItems = [
   { id: 'dashboard',    label: 'דשבורד',       icon: LayoutDashboard },
@@ -102,10 +125,6 @@ export default function Sidebar({ currentPage, onNavigate }) {
 
   const studyCourse = courses.find(c => String(c.id) === String(studyCourseId));
 
-  const initials = profile?.name
-    ? profile.name.trim().split(' ').map(w => w[0]).slice(0, 2).join('')
-    : '?';
-
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -135,7 +154,10 @@ export default function Sidebar({ currentPage, onNavigate }) {
       <div className="sidebar-timer" data-tour="study-timer">
 
         {/* ── Header ──────────────────────────────────────── */}
-        <div className="sidebar-timer-label">שעון לימוד</div>
+        <div className="sidebar-timer-label">
+          שעון לימוד
+          {(isRunning || pomPhase !== 'idle') && <span className="timer-live-dot" aria-hidden="true"/>}
+        </div>
 
         {/* ── Mode switcher — only when fully idle ─────────────── */}
         {!isRunning && pomPhase === 'idle' && (
@@ -188,9 +210,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
         {/* ── Break screen ───────────────────────────────────── */}
         {pomPhase === 'break' && (
           <>
-            <div className="sidebar-timer-display break-display">
-              {formatTime(secsLeft)}
-            </div>
+            <TimerRing secsLeft={secsLeft} totalSecs={breakMins * 60} isBreak/>
             <button className="sidebar-timer-btn start" onClick={startWorkCountdown}>
               <Play size={11} fill="currentColor"/> התחל סשן חדש
             </button>
@@ -218,10 +238,14 @@ export default function Sidebar({ currentPage, onNavigate }) {
               </div>
             )}
 
-            {/* Timer display */}
-            <div className={`sidebar-timer-display${(isRunning || pomPhase === 'work') ? ' running' : ''}`}>
-              {displayTime}
-            </div>
+            {/* Timer display — ring during pomodoro work, plain otherwise */}
+            {timerMode && pomPhase === 'work' ? (
+              <TimerRing secsLeft={secsLeft} totalSecs={workMins * 60}/>
+            ) : (
+              <div className={`sidebar-timer-display${isRunning ? ' running' : ''}`}>
+                {displayTime}
+              </div>
+            )}
 
             {/* Start / Stop */}
             <button
@@ -253,7 +277,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
       <div className="sidebar-divider"/>
 
       <div className="sidebar-user">
-        <div className="sidebar-user-avatar">{initials}</div>
+        <UserAvatar profile={profile} size={36} className="sidebar-user-avatar-img"/>
         <div className="sidebar-user-info">
           <div className="sidebar-user-name">{profile?.name ?? '...'}</div>
           <div className="sidebar-user-sub">{profile?.semester ?? ''}</div>

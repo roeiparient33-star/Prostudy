@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Plus, X, CheckSquare, SearchX, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, X, CheckSquare, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import EmptyMascot from '../components/EmptyMascot';
 import { taskTypeColors, taskTypeLabels, priorityLabels } from '../data/mockData';
 import ModalPortal from '../components/ModalPortal';
+import { burstConfetti } from '../lib/confetti';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
@@ -115,8 +117,12 @@ export default function Tasks() {
 
           {filtered.length === 0 ? (
             <div className="tasks-empty">
-              <SearchX size={36} color="var(--text-3)" style={{margin:'0 auto 12px', display:'block'}}/>
-              <div className="tasks-empty-text">אין משימות פתוחות — כל הכבוד! 🎉</div>
+              <EmptyMascot
+                text="אין משימות פתוחות — כל הכבוד! 🎉"
+                actionLabel="+ הוסף משימה חדשה"
+                onAction={() => setShowModal(true)}
+                size={72}
+              />
             </div>
           ) : (
             <div className="tasks-list-full">
@@ -161,7 +167,14 @@ function TaskRow({ task, courseById, updateTask, openEdit, removeTask }) {
   const isToday = task.dueDate === TODAY;
   return (
     <div className={`task-item${task.completed?' completed':''}`} style={{ borderRight:`3px solid ${task.completed?'var(--green)':course?.color??'var(--border)'}` }}>
-      <div className={`task-check${task.completed?' checked':''}`} onClick={() => updateTask(task.id, { completed: !task.completed })} style={{cursor:'pointer'}}>
+      <div
+        className={`task-check${task.completed?' checked':''}`}
+        onClick={e => {
+          if (!task.completed) burstConfetti(e);
+          updateTask(task.id, { completed: !task.completed });
+        }}
+        style={{cursor:'pointer'}}
+      >
         {task.completed && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8L9 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </div>
       <div className="task-body">

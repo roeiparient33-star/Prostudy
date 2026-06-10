@@ -6,6 +6,7 @@ import { COURSE_COLORS, COURSE_EMOJIS } from '../data/localStore';
 import { taskTypeColors, taskTypeLabels } from '../data/mockData';
 import ModalPortal from '../components/ModalPortal';
 import { TaskModal } from './Tasks';
+import { burstConfetti } from '../lib/confetti';
 
 export default function Courses() {
   const { courses, tasks, courseStats, addCourse, updateCourse, removeCourse, updateTask, addTask } = useData();
@@ -151,7 +152,10 @@ export default function Courses() {
                   <div key={task.id} className={`task-item${task.completed?' completed':''}`} style={{ borderRight:`3px solid ${task.completed?'var(--green)':selectedCourse.color}` }}>
                     <div
                       className={`task-check${task.completed?' checked':''}`}
-                      onClick={() => updateTask(task.id, { completed: !task.completed })}
+                      onClick={e => {
+                        if (!task.completed) burstConfetti(e);
+                        updateTask(task.id, { completed: !task.completed });
+                      }}
                       style={{cursor:'pointer'}}
                     >
                       {task.completed && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8L9 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}

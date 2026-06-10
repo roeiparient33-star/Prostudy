@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { showToast } from '../lib/toast';
 
 const LS_KEY = 'ps_timer_v2';
 const MAX_SESSION_SECS = 8 * 3600; // 8 שעות מקסימום לסשן אחד
@@ -135,8 +136,9 @@ export function useStudyTimer(userId, onStopped) {
           const lastDate     = prof.streak_last_date || null;
           let newStreak      = prof.streak_current || 0;
           let newBest        = prof.streak_best    || 0;
+          const streakAdvanced = lastDate !== todayStr;
 
-          if (lastDate !== todayStr) {
+          if (streakAdvanced) {
             const yesterday    = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toISOString().split('T')[0];
@@ -153,6 +155,7 @@ export function useStudyTimer(userId, onStopped) {
             streak_best:            newBest,
             streak_last_date:       todayStr,
           }).eq('id', userId);
+          showToast({ type: 'credits', amount: creditsEarned, streak: streakAdvanced ? newStreak : null });
           onStopped?.();
         } else {
           await supabase.from('profiles').update(sessionClear).eq('id', userId);

@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, X, Target, ListChecks, Clock, BookOpen, CalendarDays, Smile, Trophy, Flame, Pencil } from 'lucide-react';
 import ProgressBar from '../components/ProgressBar';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { taskTypeColors, taskTypeLabels } from '../data/mockData';
 import AvatarSVG from '../components/AvatarSVG';
+import UserAvatar from '../components/UserAvatar';
 import ModalPortal from '../components/ModalPortal';
+import EmptyMascot from '../components/EmptyMascot';
+import { burstConfetti } from '../lib/confetti';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
@@ -16,6 +19,30 @@ function examColor(days) {
   return                  { bg:'var(--blue-dim)',   text:'var(--blue)'   };
 }
 function fmtDate(d) { return new Date(d).toLocaleDateString('he-IL',{day:'numeric',month:'short'}); }
+
+// Animated number — counts up from 0 on mount / value change
+function useCountUp(target, decimals = 0, duration = 700) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setVal(target); return; }
+    let raf;
+    const t0 = performance.now();
+    const tick = now => {
+      const p = Math.min(1, (now - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(target * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return decimals ? val.toFixed(decimals) : Math.round(val);
+}
+
+function StatValue({ value, suffix = '', decimals = 0 }) {
+  const display = useCountUp(value, decimals);
+  return <>{display}{suffix}</>;
+}
 
 export default function Dashboard({ onNavigate }) {
   const { profile } = useAuth();
@@ -41,47 +68,61 @@ export default function Dashboard({ onNavigate }) {
     .slice(0, 4);
   const courseById = Object.fromEntries(courses.map(c => [c.id, c]));
 
+  const weeklyPct = Math.min(100, Math.round((weeklyMins / (weeklyGoal * 60)) * 100));
+
   const stats = [
-    { Icon: Target,     iconColor:'var(--accent)',  bg:'var(--accent-dim)',  label:'השלמה כוללת',   value:`${overallPct}%`,  sub:`${completedCount} מתוך ${tasks.length}` },
-    { Icon: ListChecks, iconColor:'var(--blue)',    bg:'var(--blue-dim)',    label:'משימות פתוחות', value:openCount,         sub:`${todayTasks.filter(t=>!t.completed).length} להיום` },
-    { Icon: Clock,      iconColor:'var(--purple)',  bg:'var(--purple-dim)',  label:'שעות השבוע',    value:weeklyHours,       sub:`מתוך ${weeklyGoal} שעות` },
-    { Icon: BookOpen,   iconColor:'var(--green)',   bg:'var(--green-dim)',   label:'קורסים פעילים', value:courses.length,    sub:'בסמסטר' },
+    { Icon: Target,     iconColor:'var(--accent)',  bg:'var(--accent-dim)',  label:'השלמה כוללת',   value:overallPct, suffix:'%', sub:`${completedCount} מתוך ${tasks.length}`, pct:overallPct },
+    { Icon: ListChecks, iconColor:'var(--blue)',    bg:'var(--blue-dim)',    label:'משימות פתוחות', value:openCount,              sub:`${todayTasks.filter(t=>!t.completed).length} להיום` },
+    { Icon: Clock,      iconColor:'var(--purple)',  bg:'var(--purple-dim)',  label:'שעות השבוע',    value:Number(weeklyHours), decimals:1, sub:`מתוך ${weeklyGoal} שעות`, pct:weeklyPct },
+    { Icon: BookOpen,   iconColor:'var(--green)',   bg:'var(--green-dim)',   label:'קורסים פעילים', value:courses.length,         sub:'בסמסטר' },
   ];
 
   return (
     <div className="db-page">
       {/* Greeting */}
-      <div className="db-greet">
-        <h1>שלום{firstName ? <>, <span className="greet-name">{firstName}</span></> : ''}! 👋</h1>
-        <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
-          <p style={{ margin:0 }}>{profile?.semester ?? ''}</p>
-          {streakCurrent > 0 && (
-            <button
-              className="db-streak-badge"
-              data-tour="streak-badge"
-              onClick={() => onNavigate('achievements')}
-              title={`שיא: ${streakBest} ימים`}
-            >
-              <Flame size={13} fill="currentColor"/>
-              <span>{streakCurrent} ימים ברצף</span>
-              {streakBest > streakCurrent && <span className="db-streak-best">שיא: {streakBest}</span>}
-            </button>
-          )}
+      <div className="db-greet db-greet-row">
+        <button className="db-greet-avatar" onClick={() => onNavigate('avatar')} title="לסוכן הלימודים שלי" aria-label="עבור לסוכן הלימודים">
+          <UserAvatar profile={profile} size={52}/>
+        </button>
+        <div>
+          <h1>שלום{firstName ? <>, <span className="greet-name">{firstName}</span></> : ''}! 👋</h1>
+          <div style={{ display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+            <p style={{ margin:0 }}>{profile?.semester ?? ''}</p>
+            {streakCurrent > 0 && (
+              <button
+                className="db-streak-badge"
+                data-tour="streak-badge"
+                onClick={() => onNavigate('achievements')}
+                title={`שיא: ${streakBest} ימים`}
+              >
+                <Flame size={13} fill="currentColor"/>
+                <span>{streakCurrent} ימים ברצף</span>
+                {streakBest > streakCurrent && <span className="db-streak-best">שיא: {streakBest}</span>}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="db-stats enter-stagger" data-tour="stats-grid">
         {stats.map((s, i) => (
-          <div className="db-stat" key={i}>
+          <div className="db-stat" key={i} style={{'--stat-color': s.iconColor}}>
             <div className="db-stat-top">
               <div className="db-stat-label">{s.label}</div>
               <div className="db-stat-icon" style={{background:s.bg}}>
                 <s.Icon size={16} color={s.iconColor}/>
               </div>
             </div>
-            <div className="db-stat-value">{s.value}</div>
+            <div className="db-stat-value">
+              <StatValue value={s.value} suffix={s.suffix} decimals={s.decimals}/>
+            </div>
             <div className="db-stat-sub">{s.sub}</div>
+            {s.pct != null && (
+              <div className="db-stat-mini-track">
+                <div className="db-stat-mini-fill" style={{width:`${s.pct}%`, background:s.iconColor}}/>
+              </div>
+            )}
           </div>
         ))}
         <div
@@ -116,10 +157,11 @@ export default function Dashboard({ onNavigate }) {
               <button className="section-action" onClick={() => onNavigate('courses')}>הצג הכל</button>
             </div>
             {courses.length === 0 ? (
-              <div className="db-empty-sm">
-                <BookOpen size={28} color="var(--text-3)"/>
-                <button className="section-action" onClick={() => onNavigate('courses')}>הוסף קורס ראשון</button>
-              </div>
+              <EmptyMascot
+                text="עוד אין קורסים — בוא נתחיל!"
+                actionLabel="+ הוסף קורס ראשון"
+                onAction={() => onNavigate('courses')}
+              />
             ) : (
               <div className="db-courses-scroll">
                 <div className="courses-mini-grid">
@@ -156,9 +198,11 @@ export default function Dashboard({ onNavigate }) {
               <button className="section-action" onClick={() => onNavigate('tasks')}>הצג הכל</button>
             </div>
             {todayTasks.length === 0 ? (
-              <div className="db-empty-sm">
-                <span>{tasks.length === 0 ? 'הוסף משימות כדי להתחיל' : '🎉 אין משימות להיום!'}</span>
-              </div>
+              <EmptyMascot
+                text={tasks.length === 0 ? 'אין משימות עדיין — מוסיפים אחת ומתחילים' : '🎉 סיימת הכל להיום, אלוף!'}
+                actionLabel={tasks.length === 0 ? '+ הוסף משימה' : null}
+                onAction={tasks.length === 0 ? () => onNavigate('tasks') : null}
+              />
             ) : (
               <div className="tasks-today-list">
                 {todayTasks.map(task => {
@@ -168,7 +212,10 @@ export default function Dashboard({ onNavigate }) {
                     <div className={`task-item${task.completed?' completed':''}`} key={task.id}>
                       <div
                         className={`task-check${task.completed?' checked':''}`}
-                        onClick={() => updateTask(task.id, { completed: !task.completed })}
+                        onClick={e => {
+                          if (!task.completed) burstConfetti(e);
+                          updateTask(task.id, { completed: !task.completed });
+                        }}
                         style={{cursor:'pointer'}}
                       >
                         {task.completed && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8L9 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}

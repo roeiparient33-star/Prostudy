@@ -3,14 +3,11 @@ import { Settings, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ModalPortal from './ModalPortal';
 import NotificationBell from './NotificationBell';
+import UserAvatar from './UserAvatar';
 
 export default function Topbar({ title }) {
   const { profile, updateProfile } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
-
-  const initials = profile?.name
-    ? profile.name.trim().split(' ').map(w => w[0]).slice(0, 2).join('')
-    : '?';
 
   return (
     <>
@@ -22,8 +19,8 @@ export default function Topbar({ title }) {
             <Settings size={17}/>
           </button>
           <NotificationBell/>
-          <div className="topbar-avatar" title={profile?.name} onClick={() => setShowSettings(true)}>
-            {initials}
+          <div className="topbar-avatar-wrap" title={profile?.name} onClick={() => setShowSettings(true)}>
+            <UserAvatar profile={profile} size={36}/>
           </div>
         </div>
       </header>

@@ -20,6 +20,8 @@ import ResetPassword from './pages/ResetPassword';
 import OnboardingTour from './onboarding/OnboardingTour';
 import HelpButton from './onboarding/HelpButton';
 import PWAInstallBanner from './components/PWAInstallBanner';
+import ToastHost from './components/ToastHost';
+import AchievementWatcher from './components/AchievementWatcher';
 
 // Capture referral code from URL on app load
 const urlRef = new URLSearchParams(window.location.search).get('ref');
@@ -90,6 +92,8 @@ export default function App() {
       <OnboardingTour page={page} setPage={setPage}/>
       <HelpButton page={page}/>
       <PWAInstallBanner/>
+      <ToastHost/>
+      <AchievementWatcher/>
     </>
   );
 }
