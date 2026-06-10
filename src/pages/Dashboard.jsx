@@ -8,6 +8,7 @@ import AvatarSVG from '../components/AvatarSVG';
 import UserAvatar from '../components/UserAvatar';
 import ModalPortal from '../components/ModalPortal';
 import EmptyMascot from '../components/EmptyMascot';
+import ActivationChecklist from '../components/ActivationChecklist';
 import { burstConfetti } from '../lib/confetti';
 
 const TODAY = new Date().toISOString().split('T')[0];
@@ -103,6 +104,9 @@ export default function Dashboard({ onNavigate }) {
           </div>
         </div>
       </div>
+
+      {/* First-session activation path */}
+      <ActivationChecklist onNavigate={onNavigate}/>
 
       {/* Stats */}
       <div className="db-stats enter-stagger" data-tour="stats-grid">

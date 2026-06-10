@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) fetchProfile(session.user.id, session.user);
       else setLoading(false);
     });
 
@@ -33,20 +33,36 @@ export function AuthProvider({ children }) {
         return;
       }
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) fetchProfile(session.user.id, session.user);
       else { setActiveUser(''); setProfile(null); setLoading(false); }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  async function fetchProfile(userId) {
+  async function fetchProfile(userId, sessionUser) {
     setActiveUser(userId);
     let { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
+
+    // Self-heal: OAuth signups (Google) may not have a profiles row yet
+    if (!data) {
+      const meta = sessionUser?.user_metadata ?? {};
+      const name = meta.name || meta.full_name || sessionUser?.email?.split('@')[0] || '';
+      const { data: created } = await supabase
+        .from('profiles')
+        .insert({ id: userId, name })
+        .select()
+        .single();
+      data = created;
+      // a DB trigger may have raced us — re-read once
+      if (!data) {
+        ({ data } = await supabase.from('profiles').select('*').eq('id', userId).single());
+      }
+    }
 
     if (!data) { setLoading(false); return; }
 
@@ -99,6 +115,17 @@ export function AuthProvider({ children }) {
     return supabase.auth.signInWithPassword({ email, password });
   }
 
+  async function signInWithGoogle() {
+    return supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+  }
+
+  async function resendConfirmation(email) {
+    return supabase.auth.resend({ type: 'signup', email });
+  }
+
   async function sendPasswordReset(email) {
     return supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/`,
@@ -135,11 +162,13 @@ export function AuthProvider({ children }) {
       clearRecovery: () => setRecovery(false),
       signUp,
       signIn,
+      signInWithGoogle,
+      resendConfirmation,
       signOut,
       sendPasswordReset,
       updatePassword,
       updateProfile,
-      refreshProfile: () => fetchProfile(user?.id),
+      refreshProfile: () => fetchProfile(user?.id, user),
     }}>
       {children}
     </AuthContext.Provider>

@@ -2,14 +2,21 @@ import { useState } from 'react';
 import { GraduationCap, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PasswordInput from '../components/PasswordInput';
+import GoogleButton from '../components/GoogleButton';
 
 export default function Login({ onSwitchToSignup }) {
-  const { signIn, sendPasswordReset } = useAuth();
+  const { signIn, signInWithGoogle, sendPasswordReset } = useAuth();
   const [view, setView]         = useState('login'); // 'login' | 'forgot' | 'sent'
-  const [email, setEmail]       = useState('');
+  const [email, setEmail]       = useState(() => localStorage.getItem('ps_last_email') || '');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
+
+  async function handleGoogle() {
+    setError('');
+    const { error: err } = await signInWithGoogle();
+    if (err) setError('כניסה עם Google לא זמינה כרגע — נסה עם אימייל וסיסמה');
+  }
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -18,6 +25,7 @@ export default function Login({ onSwitchToSignup }) {
     const { error: err } = await signIn(email, password);
     setLoading(false);
     if (err) setError(translateError(err.message));
+    else localStorage.setItem('ps_last_email', email);
   }
 
   async function handleForgot(e) {
@@ -114,6 +122,9 @@ export default function Login({ onSwitchToSignup }) {
 
         <h1 className="auth-title">ברוך השב 👋</h1>
         <p className="auth-subtitle">התחבר לחשבון שלך כדי להמשיך ללמוד</p>
+
+        <GoogleButton onClick={handleGoogle} label="כניסה עם Google"/>
+        <div className="auth-divider"><span>או עם אימייל</span></div>
 
         <form className="auth-form" onSubmit={handleLogin}>
           <div className="auth-field">
