@@ -50,7 +50,7 @@ export default function App() {
   }
 
   if (!user) {
-    if (authView === 'landing') return <LandingPage onSignup={() => setAuthView('signup')}/>;
+    if (authView === 'landing') return <LandingPage onSignup={() => setAuthView('signup')} onLogin={() => setAuthView('login')}/>;
     return authView === 'login'
       ? <Login onSwitchToSignup={() => setAuthView('signup')}/>
       : <Signup onSwitchToLogin={() => setAuthView('login')}/>;

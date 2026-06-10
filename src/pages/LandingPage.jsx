@@ -1,15 +1,14 @@
 import { useEffect } from 'react';
 
-export default function LandingPage({ onSignup }) {
+export default function LandingPage({ onSignup, onLogin }) {
   useEffect(() => {
     function handleMessage(e) {
-      if (e.data?.action === 'signup') {
-        onSignup();
-      }
+      if (e.data?.action === 'signup') onSignup();
+      if (e.data?.action === 'login')  onLogin?.();
     }
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [onSignup]);
+  }, [onSignup, onLogin]);
 
   return (
     <iframe
