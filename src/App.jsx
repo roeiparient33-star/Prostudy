@@ -22,6 +22,8 @@ import HelpButton from './onboarding/HelpButton';
 import PWAInstallBanner from './components/PWAInstallBanner';
 import ToastHost from './components/ToastHost';
 import AchievementWatcher from './components/AchievementWatcher';
+import AdminDashboard from './pages/AdminDashboard';
+import { isAdmin } from './lib/admin';
 
 // Capture referral code from URL on app load
 const urlRef = new URLSearchParams(window.location.search).get('ref');
@@ -35,6 +37,7 @@ const PAGE_MAP = {
   friends:      { component: Friends,      title: 'חברים' },
   avatar:       { component: Avatar,       title: 'סוכן הלימודים שלי' },
   achievements: { component: Achievements, title: 'ארון הגביעים' },
+  admin:        { component: AdminDashboard, title: 'חמ"ל' },
 };
 
 export default function App() {
@@ -74,16 +77,18 @@ export default function App() {
     );
   }
 
-  const { component: Page, title } = PAGE_MAP[page] ?? PAGE_MAP.dashboard;
+  // admin page is reserved for admins only
+  const safePage = page === 'admin' && !isAdmin(user) ? 'dashboard' : page;
+  const { component: Page, title } = PAGE_MAP[safePage] ?? PAGE_MAP.dashboard;
 
   return (
     <>
       <div className="app-layout">
-        <Sidebar currentPage={page} onNavigate={setPage}/>
+        <Sidebar currentPage={safePage} onNavigate={setPage}/>
         <div className="main-wrapper">
-          <Topbar title={title}/>
+          <Topbar title={title} onNavigate={setPage}/>
           <main className="main-content">
-            <Page key={page} onNavigate={setPage}/>
+            <Page key={safePage} onNavigate={setPage}/>
           </main>
         </div>
         <MobileTimerBar/>

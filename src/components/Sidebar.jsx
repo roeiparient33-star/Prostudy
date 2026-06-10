@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, BookOpen, CheckSquare, Users, GraduationCap, LogOut, Smile, CalendarDays, Play, Square, Settings2, Trophy } from 'lucide-react';
+import { LayoutDashboard, BookOpen, CheckSquare, Users, GraduationCap, LogOut, Smile, CalendarDays, Play, Square, Settings2, Trophy, BarChart3 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { isAdmin } from '../lib/admin';
 import { useData } from '../contexts/DataContext';
 import { useTimer, formatTime } from '../contexts/TimerContext';
 import UserAvatar from './UserAvatar';
@@ -38,7 +39,7 @@ const navItems = [
 ];
 
 export default function Sidebar({ currentPage, onNavigate }) {
-  const { profile, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { courses } = useData();
   const { isRunning, currentSeconds, start, stop } = useTimer();
 
@@ -146,6 +147,15 @@ export default function Sidebar({ currentPage, onNavigate }) {
             {label}
           </button>
         ))}
+        {isAdmin(user) && (
+          <button
+            className={`sidebar-nav-item admin${currentPage === 'admin' ? ' active' : ''}`}
+            onClick={() => onNavigate('admin')}
+          >
+            <BarChart3 size={17} className="nav-icon"/>
+            חמ"ל 🎯
+          </button>
+        )}
       </nav>
 
       <div className="sidebar-divider"/>

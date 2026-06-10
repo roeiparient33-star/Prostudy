@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Settings, X } from 'lucide-react';
+import { Settings, X, BarChart3 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ModalPortal from './ModalPortal';
 import NotificationBell from './NotificationBell';
 import UserAvatar from './UserAvatar';
+import { isAdmin } from '../lib/admin';
 
-export default function Topbar({ title }) {
-  const { profile, updateProfile } = useAuth();
+export default function Topbar({ title, onNavigate }) {
+  const { user, profile, updateProfile } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
 
   return (
@@ -15,6 +16,11 @@ export default function Topbar({ title }) {
         <span className="topbar-title">{title}</span>
 
         <div className="topbar-actions">
+          {isAdmin(user) && onNavigate && (
+            <button className="topbar-icon-btn topbar-admin-btn" title='חמ"ל' onClick={() => onNavigate('admin')}>
+              <BarChart3 size={17}/>
+            </button>
+          )}
           <button className="topbar-icon-btn" title="הגדרות" onClick={() => setShowSettings(true)}>
             <Settings size={17}/>
           </button>
