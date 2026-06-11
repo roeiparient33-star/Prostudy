@@ -5647,3 +5647,9 @@ select:focus-visible {
 @media (max-width: 640px) {
   .stk-badge { padding: 0 10px; height: 34px; }
 }
+
+/* page-level Suspense fallback */
+.page-spinner {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 280px;
+}

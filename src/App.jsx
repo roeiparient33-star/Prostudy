@@ -1,29 +1,35 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { useData } from './contexts/DataContext';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import MobileTimerBar from './components/MobileTimerBar';
 import Topbar from './components/Topbar';
-import Dashboard from './pages/Dashboard';
-import Courses from './pages/Courses';
-import Tasks from './pages/Tasks';
-import Friends from './pages/Friends';
-import Avatar from './pages/Avatar';
-import Schedule from './pages/Schedule';
+import ToastHost from './components/ToastHost';
+import { isAdmin } from './lib/admin';
+
+// Auth screens stay eagerly loaded (first thing unauthenticated users see)
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import LandingPage from './pages/LandingPage';
-import AvatarOnboarding from './components/AvatarOnboarding';
-import Achievements from './pages/Achievements';
-import ResetPassword from './pages/ResetPassword';
-import OnboardingTour from './onboarding/OnboardingTour';
+const OnboardingTour = lazy(() => import('./onboarding/OnboardingTour'));
+
+// Onboarding uses 1MB of avatar SVG data — lazy-load it
+const AvatarOnboarding = lazy(() => import('./components/AvatarOnboarding'));
 import HelpButton from './onboarding/HelpButton';
 import PWAInstallBanner from './components/PWAInstallBanner';
-import ToastHost from './components/ToastHost';
 import AchievementWatcher from './components/AchievementWatcher';
-import AdminDashboard from './pages/AdminDashboard';
-import { isAdmin } from './lib/admin';
+
+// Pages are lazy-loaded — each becomes its own JS chunk
+const Dashboard      = lazy(() => import('./pages/Dashboard'));
+const Courses        = lazy(() => import('./pages/Courses'));
+const Tasks          = lazy(() => import('./pages/Tasks'));
+const Friends        = lazy(() => import('./pages/Friends'));
+const Avatar         = lazy(() => import('./pages/Avatar'));
+const Schedule       = lazy(() => import('./pages/Schedule'));
+const Achievements   = lazy(() => import('./pages/Achievements'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const ResetPassword  = lazy(() => import('./pages/ResetPassword'));
+const LandingPage    = lazy(() => import('./pages/LandingPage'));
 
 // Capture referral code from URL on app load
 const urlParams = new URLSearchParams(window.location.search);
@@ -61,11 +67,11 @@ export default function App() {
   }
 
   if (isRecovery) {
-    return <ResetPassword onDone={clearRecovery} />;
+    return <Suspense fallback={<div className="auth-loading"><div className="auth-spinner"/></div>}><ResetPassword onDone={clearRecovery} /></Suspense>;
   }
 
   if (!user) {
-    if (authView === 'landing') return <LandingPage onSignup={() => setAuthView('signup')} onLogin={() => setAuthView('login')}/>;
+    if (authView === 'landing') return <Suspense fallback={<div className="auth-loading"><div className="auth-spinner"/></div>}><LandingPage onSignup={() => setAuthView('signup')} onLogin={() => setAuthView('login')}/></Suspense>;
     return authView === 'login'
       ? <Login onSwitchToSignup={() => setAuthView('signup')}/>
       : <Signup onSwitchToLogin={() => setAuthView('login')}/>;
@@ -76,6 +82,7 @@ export default function App() {
 
   if (needsOnboarding) {
     return (
+      <Suspense fallback={<div className="auth-loading"><div className="auth-spinner"/></div>}>
       <AvatarOnboarding
         onSelect={async (presetIdx) => {
           await updateProfile({
@@ -84,6 +91,7 @@ export default function App() {
           });
         }}
       />
+      </Suspense>
     );
   }
 
@@ -98,13 +106,15 @@ export default function App() {
         <div className="main-wrapper">
           <Topbar title={title} onNavigate={setPage}/>
           <main className="main-content">
-            <Page key={safePage} onNavigate={setPage}/>
+            <Suspense fallback={<div className="page-spinner"><div className="auth-spinner"/></div>}>
+              <Page key={safePage} onNavigate={setPage}/>
+            </Suspense>
           </main>
         </div>
         <MobileTimerBar/>
         <BottomNav currentPage={page} onNavigate={setPage}/>
       </div>
-      <OnboardingTour page={page} setPage={setPage}/>
+      <Suspense fallback={null}><OnboardingTour page={page} setPage={setPage}/></Suspense>
       <HelpButton page={page}/>
       <PWAInstallBanner/>
       <ToastHost/>

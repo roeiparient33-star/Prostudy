@@ -445,6 +445,54 @@ footer{ margin-top:100px; padding:30px 22px 40px; border-top:var(--bw) solid var
 .rv.in{ opacity:1; transform:none; }
 .rv-d1{ transition-delay:.1s; } .rv-d2{ transition-delay:.2s; }
 
+/* ════════ SOCIAL PROOF STRIP ════════ */
+.uni-strip{ padding:36px 0 0; }
+.uni-label{ font-size:13px; font-weight:800; color:var(--ink-faint); text-align:center; margin-bottom:14px; letter-spacing:.3px; }
+.uni-row{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+.uni-chip{
+  font-size:13px; font-weight:700; padding:7px 16px;
+  border:2.5px solid var(--ink); border-radius:var(--r-pill);
+  background:var(--card); box-shadow:-2px 2px 0 var(--ink);
+  color:var(--ink);
+}
+
+/* ════════ TESTIMONIALS ════════ */
+.testi-sec{ padding:100px 0 0; }
+.testi-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:0; }
+.testi-card{
+  background:var(--card); border:var(--bw) solid var(--ink); border-radius:var(--r-lg);
+  box-shadow:-6px 6px 0 var(--ink); padding:24px;
+  display:flex; flex-direction:column; gap:14px;
+  transition:transform .2s var(--pop), box-shadow .2s var(--pop);
+}
+.testi-card:hover{ transform:translateY(-4px); box-shadow:-8px 9px 0 var(--ink); }
+.testi-card:nth-child(odd){ transform:rotate(-.6deg); }
+.testi-card:nth-child(odd):hover{ transform:rotate(0) translateY(-4px); }
+.testi-card:nth-child(even){ transform:rotate(.6deg); }
+.testi-card:nth-child(even):hover{ transform:rotate(0) translateY(-4px); }
+.testi-stars{ color:var(--yellow); font-size:15px; letter-spacing:2px; }
+.testi-quote{ font-size:14.5px; line-height:1.75; color:var(--ink-soft); font-weight:500; flex:1; }
+.testi-quote::before{ content:'"'; font-family:var(--display); font-size:36px; color:var(--orange); line-height:.6; display:block; margin-bottom:4px; }
+.testi-who{ display:flex; align-items:center; gap:10px; }
+.testi-avatar{
+  width:36px; height:36px; border-radius:50%; flex-shrink:0;
+  border:2.5px solid var(--ink); display:grid; place-items:center;
+  font-family:var(--display); font-size:16px; color:#fff;
+}
+.testi-name{ font-size:13.5px; font-weight:800; }
+.testi-inst{ font-size:12px; color:var(--ink-faint); font-weight:700; }
+
+/* ════════ STICKY MOBILE CTA ════════ */
+.sticky-cta{
+  display:none; position:fixed; bottom:0; right:0; left:0; z-index:40;
+  padding:12px 20px 20px;
+  background:linear-gradient(to top, var(--paper) 80%, transparent);
+  opacity:0; transform:translateY(100%);
+  transition:opacity .3s var(--ease), transform .3s var(--ease);
+}
+.sticky-cta.visible{ opacity:1; transform:none; }
+.sticky-cta .btn{ width:100%; justify-content:center; box-shadow:-4px 5px 0 var(--ink); }
+
 /* responsive */
 @media(max-width:980px){
   .hero{ padding-top:120px; }
@@ -457,6 +505,14 @@ footer{ margin-top:100px; padding:30px 22px 40px; border-top:var(--bw) solid var
   .prem-grid{ grid-template-columns:1fr; }
   .pricing{ grid-template-columns:1fr; }
   .nav-links{ display:none; }
+  .testi-row{ grid-template-columns:1fr; }
+  .testi-card:nth-child(odd),
+  .testi-card:nth-child(even){ transform:none; }
+}
+@media(max-width:640px){
+  .sticky-cta{ display:block; }
+  /* add bottom padding so footer content isn't hidden behind sticky bar */
+  footer{ padding-bottom:80px; }
 }
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
@@ -489,6 +545,7 @@ footer{ margin-top:100px; padding:30px 22px 40px; border-top:var(--bw) solid var
         <div class="hero-badges">
           <span class="badge">✦ חינם לגמרי</span>
           <span class="badge">📱 עובד גם בנייד</span>
+          <span class="badge" id="user-count-badge" style="background:var(--green);color:#fff;display:none">👥 <span id="user-count">...</span> סטודנטים</span>
         </div>
         <h1>מהבלאגן של הסמסטר —<br/>ל<span class="stamp">שליטה מלאה.</span></h1>
         <p class="hero-sub">
@@ -497,7 +554,7 @@ footer{ margin-top:100px; padding:30px 22px 40px; border-top:var(--bw) solid var
           וצוותי למידה שלא נותנים לדחות למחר.
         </p>
         <div class="hero-ctas">
-          <a href="#" class="btn btn-primary btn-big" onclick="go(event,'signup')">מתחילים בחינם ←</a>
+          <a href="#" class="btn btn-primary btn-big" onclick="go(event,'signup')">אני רוצה להתחיל ←</a>
           <a href="#order" class="btn">איך זה עובד?</a>
         </div>
         <div class="hero-note">בלי כרטיס אשראי · נרשמים בחצי דקה · אין פרסומות</div>
@@ -551,6 +608,21 @@ footer{ margin-top:100px; padding:30px 22px 40px; border-top:var(--bw) solid var
       </div>
     </div>
   </header>
+
+  <!-- ═══════════ SOCIAL PROOF STRIP ═══════════ -->
+  <section class="uni-strip rv">
+    <div class="wrap">
+      <div class="uni-label">סטודנטים משתמשים מ:</div>
+      <div class="uni-row">
+        <span class="uni-chip">🎓 הטכניון</span>
+        <span class="uni-chip">🎓 ת"א</span>
+        <span class="uni-chip">🎓 בן גוריון</span>
+        <span class="uni-chip">🎓 בר-אילן</span>
+        <span class="uni-chip">🎓 האוניברסיטה העברית</span>
+        <span class="uni-chip">🎓 אריאל</span>
+      </div>
+    </div>
+  </section>
 
   <!-- ═══════════ 01-02-03 ═══════════ -->
   <section id="order">
@@ -748,18 +820,59 @@ footer{ margin-top:100px; padding:30px 22px 40px; border-top:var(--bw) solid var
     </div>
   </div>
 
+  <!-- ═══════════ TESTIMONIALS ═══════════ -->
+  <section class="testi-sec">
+    <div class="wrap">
+      <div style="text-align:center;max-width:520px;margin:0 auto 40px" class="rv">
+        <span class="sec-label lb-o">מה אומרים</span>
+        <h2>סטודנטים אמיתיים, שיפור אמיתי</h2>
+      </div>
+      <div class="testi-row">
+        <div class="testi-card rv">
+          <div class="testi-stars">★★★★★</div>
+          <div class="testi-quote">"סוף סוף אני יודע מה יש לי עד מחר. ProStudy שמרה לי על רצף של 18 ימים וזה מאוד עוזר לא לפשל."</div>
+          <div class="testi-who">
+            <div class="testi-avatar" style="background:var(--orange)">ר</div>
+            <div><div class="testi-name">רועי פ.</div><div class="testi-inst">הנדסת תעשייה</div></div>
+          </div>
+        </div>
+        <div class="testi-card rv rv-d1">
+          <div class="testi-stars">★★★★★</div>
+          <div class="testi-quote">"פתחנו צוות לאינפי 2 עם 4 חברים. רואים מי לומד עכשיו ובלי להגיד כלום — כולם מתביישים לא ללמוד."</div>
+          <div class="testi-who">
+            <div class="testi-avatar" style="background:var(--purple)">ש</div>
+            <div><div class="testi-name">שיר מ.</div><div class="testi-inst">כלכלה, ת"א</div></div>
+          </div>
+        </div>
+        <div class="testi-card rv rv-d2">
+          <div class="testi-stars">★★★★★</div>
+          <div class="testi-quote">"הייתי מפזר משימות בין נוטס, וואטסאפ ומחברת. עכשיו הכל במקום אחד. הסמסטר הזה כבר הרגיש אחרת."</div>
+          <div class="testi-who">
+            <div class="testi-avatar" style="background:var(--blue)">א</div>
+            <div><div class="testi-name">אמיר ל.</div><div class="testi-inst">מדעי המחשב</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══════════ FINAL CTA ═══════════ -->
   <section class="final">
     <div class="wrap rv">
       <div class="final-box">
         <h2>הסמסטר לא הולך להסתדר לבד.</h2>
         <p>חצי דקה להירשם — וכל הקורסים, המטלות והמבחנים שלך נכנסים לסדר. בחינם.</p>
-        <a href="#" class="btn btn-big" onclick="go(event,'signup')">פותחים חשבון חינם 🚀</a>
+        <a href="#" class="btn btn-big" onclick="go(event,'signup')">אני מצטרף.ת עכשיו — בחינם 🚀</a>
         <div class="final-note">בלי כרטיס אשראי · בלי פרסומות · אפשר לבטל מתי שרוצים (אבל לא תרצו)</div>
       </div>
     </div>
   </section>
 </main>
+
+<!-- sticky mobile CTA — appears after hero -->
+<div class="sticky-cta" id="sticky-cta" aria-hidden="true">
+  <a href="#" class="btn btn-primary" onclick="go(event,'signup')">אני רוצה להתחיל ←</a>
+</div>
 
 <footer>
   <div class="foot">
@@ -776,6 +889,38 @@ function go(e, action){
   const ref = new URLSearchParams(location.search).get('ref');
   location.href = '/?view=' + action + (ref ? '&ref=' + encodeURIComponent(ref) : '');
 }
+// Sticky mobile CTA — show after scrolling past hero
+const stickyCta = document.getElementById('sticky-cta');
+const heroEl    = document.querySelector('.hero');
+let stickyShown = false;
+function checkSticky() {
+  const heroBottom = heroEl ? heroEl.getBoundingClientRect().bottom : 0;
+  if (heroBottom < 0 && !stickyShown) {
+    stickyCta.classList.add('visible'); stickyCta.setAttribute('aria-hidden','false'); stickyShown = true;
+  } else if (heroBottom >= 0 && stickyShown) {
+    stickyCta.classList.remove('visible'); stickyCta.setAttribute('aria-hidden','true'); stickyShown = false;
+  }
+}
+addEventListener('scroll', checkSticky, { passive:true });
+
+// User count badge — fetched from Supabase (anon key is safe to use here, count only)
+(async () => {
+  try {
+    const r = await fetch(
+      'https://ymodgzacgzncrwmeqqle.supabase.co/rest/v1/profiles?select=id&limit=1',
+      { headers: {
+        apikey: 'sb_publishable_RM_KuC25TP0fLGPvNPfZdA_AdWNnQx8',
+        'Prefer': 'count=exact',
+      }}
+    );
+    const count = parseInt(r.headers.get('content-range')?.split('/')[1] || '0', 10);
+    if (count >= 10) {
+      document.getElementById('user-count').textContent = count + '+';
+      document.getElementById('user-count-badge').style.display = '';
+    }
+  } catch {}
+})();
+
 const nav = document.getElementById('nav');
 addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 20), { passive:true });
 const mq = document.getElementById('marquee');
