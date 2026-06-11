@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ModalPortal from './ModalPortal';
 import NotificationBell from './NotificationBell';
 import UserAvatar from './UserAvatar';
+import StreakBadge from './StreakBadge';
 import { isAdmin } from '../lib/admin';
 
 export default function Topbar({ title, onNavigate }) {
@@ -16,6 +17,7 @@ export default function Topbar({ title, onNavigate }) {
         <span className="topbar-title">{title}</span>
 
         <div className="topbar-actions">
+          <StreakBadge/>
           {isAdmin(user) && onNavigate && (
             <button className="topbar-icon-btn topbar-admin-btn" title='חמ"ל' onClick={() => onNavigate('admin')}>
               <BarChart3 size={17}/>

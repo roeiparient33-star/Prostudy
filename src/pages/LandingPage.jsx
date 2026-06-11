@@ -1,27 +1,12 @@
 import { useEffect } from 'react';
 
-export default function LandingPage({ onSignup, onLogin }) {
+// The landing now lives at /landing.html as a real top-level page
+// (crawlable, with its own meta/OG) instead of inside an iframe.
+// Its CTA buttons come back to /?view=signup or /?view=login.
+export default function LandingPage() {
   useEffect(() => {
-    function handleMessage(e) {
-      if (e.data?.action === 'signup') onSignup();
-      if (e.data?.action === 'login')  onLogin?.();
-    }
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [onSignup, onLogin]);
+    window.location.replace('/landing.html');
+  }, []);
 
-  return (
-    <iframe
-      src="/landing.html"
-      title="ProStudy"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        border: 'none',
-        zIndex: 9999,
-      }}
-    />
-  );
+  return <div className="auth-loading"><div className="auth-spinner"/></div>;
 }

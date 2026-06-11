@@ -26,8 +26,18 @@ import AdminDashboard from './pages/AdminDashboard';
 import { isAdmin } from './lib/admin';
 
 // Capture referral code from URL on app load
-const urlRef = new URLSearchParams(window.location.search).get('ref');
+const urlParams = new URLSearchParams(window.location.search);
+const urlRef = urlParams.get('ref');
 if (urlRef) localStorage.setItem('ps_ref', urlRef);
+
+// Landing CTA buttons arrive at /?view=signup or /?view=login —
+// open the right screen and strip only the view param (keep ?code= etc. for OAuth)
+const urlView = ['signup', 'login'].includes(urlParams.get('view')) ? urlParams.get('view') : null;
+if (urlView) {
+  urlParams.delete('view');
+  const qs = urlParams.toString();
+  window.history.replaceState({}, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+}
 
 const PAGE_MAP = {
   dashboard:    { component: Dashboard,    title: 'דשבורד' },
@@ -44,7 +54,7 @@ export default function App() {
   const { user, profile, loading, updateProfile, isRecovery, clearRecovery } = useAuth();
   const { dataLoading } = useData();
   const [page, setPage]         = useState('dashboard');
-  const [authView, setAuthView] = useState('landing');
+  const [authView, setAuthView] = useState(urlView || 'landing');
 
   if (loading || (user && dataLoading)) {
     return <div className="auth-loading"><div className="auth-spinner"/></div>;

@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ProStudy — מהבלאגן של הסמסטר לשליטה מלאה</title>
 <meta name="description" content="ProStudy עושה סדר בקורסים, במטלות ובמבחנים — ועוזרת לך ללמוד יותר, לבד או עם חברים. כל דקת לימוד שווה טוקן. חינם."/>
+<link rel="icon" href="/logo.png"/>
+<!-- ⚠️ שיתוף ברשתות (וואטסאפ/פייסבוק): עדכן את הדומיין לכתובת האמיתית של האתר -->
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="ProStudy"/>
+<meta property="og:locale" content="he_IL"/>
+<meta property="og:title" content="ProStudy — מהבלאגן של הסמסטר לשליטה מלאה"/>
+<meta property="og:description" content="סדר בקורסים, במטלות ובמבחנים — וכל דקת לימוד שווה קרדיטים. לומדים לבד או עם חברים. חינם לסטודנטים."/>
+<meta property="og:url" content="https://prostudy.vercel.app/"/>
+<meta property="og:image" content="https://prostudy.vercel.app/logo.png"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="ProStudy — מהבלאגן של הסמסטר לשליטה מלאה"/>
+<meta name="twitter:description" content="סדר בקורסים, במטלות ובמבחנים — וכל דקת לימוד שווה קרדיטים. חינם לסטודנטים."/>
+<meta name="twitter:image" content="https://prostudy.vercel.app/logo.png"/>
 
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -758,8 +771,10 @@ footer{ margin-top:100px; padding:30px 22px 40px; border-top:var(--bw) solid var
 <script>
 function go(e, action){
   e.preventDefault();
-  if (window.parent !== window) window.parent.postMessage({ action }, '*');
-  else alert(action === 'login' ? 'כאן יוצג מסך הכניסה' : 'כאן יוצג מסך ההרשמה');
+  if (window.parent !== window) { window.parent.postMessage({ action }, '*'); return; }
+  // Standalone page: hand off to the app, preserving a referral code if present
+  const ref = new URLSearchParams(location.search).get('ref');
+  location.href = '/?view=' + action + (ref ? '&ref=' + encodeURIComponent(ref) : '');
 }
 const nav = document.getElementById('nav');
 addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 20), { passive:true });

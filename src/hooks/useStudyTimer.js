@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../lib/toast';
+import { advanceStreak } from '../lib/streak';
 
 const LS_KEY = 'ps_timer_v2';
 const MAX_SESSION_SECS = 8 * 3600; // 8 שעות מקסימום לסשן אחד
@@ -127,35 +128,40 @@ export function useStudyTimer(userId, onStopped) {
 
         const { data: prof } = await supabase
           .from('profiles')
-          .select('credits, weekly_studied_minutes, total_studied_minutes, streak_current, streak_best, streak_last_date')
+          .select('*')
           .eq('id', userId)
           .single();
 
         if (prof) {
-          const todayStr     = new Date().toISOString().split('T')[0];
-          const lastDate     = prof.streak_last_date || null;
-          let newStreak      = prof.streak_current || 0;
-          let newBest        = prof.streak_best    || 0;
-          const streakAdvanced = lastDate !== todayStr;
+          const todayStr = new Date().toISOString().split('T')[0];
+          const adv      = advanceStreak(prof, todayStr); // null = כבר נספר רצף היום
 
-          if (streakAdvanced) {
-            const yesterday    = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toISOString().split('T')[0];
-            newStreak = (lastDate === yesterdayStr) ? newStreak + 1 : 1;
-            newBest   = Math.max(newBest, newStreak);
-          }
+          const streakUpdates = adv
+            ? {
+                streak_current:   adv.streak_current,
+                streak_best:      adv.streak_best,
+                streak_last_date: adv.streak_last_date,
+                streak_freezes:   adv.streak_freezes,
+              }
+            : {};
 
-          await supabase.from('profiles').update({
+          const updates = {
             ...sessionClear,
+            ...streakUpdates,
             credits:                (prof.credits               || 0) + creditsEarned,
             weekly_studied_minutes: (prof.weekly_studied_minutes || 0) + minsStudied,
             total_studied_minutes:  (prof.total_studied_minutes  || 0) + minsStudied,
-            streak_current:         newStreak,
-            streak_best:            newBest,
-            streak_last_date:       todayStr,
-          }).eq('id', userId);
-          showToast({ type: 'credits', amount: creditsEarned, streak: streakAdvanced ? newStreak : null });
+          };
+          const { error: updErr } = await supabase.from('profiles').update(updates).eq('id', userId);
+          if (updErr && 'streak_freezes' in updates) {
+            // DB doesn't have the freezes column yet — save everything else
+            delete updates.streak_freezes;
+            await supabase.from('profiles').update(updates).eq('id', userId);
+          }
+          showToast({ type: 'credits', amount: creditsEarned, streak: adv ? adv.streak_current : null });
+          if (adv?.freezesUsed > 0) {
+            showToast({ type: 'info', text: `❄️ הקפאת רצף הצילה את הרצף שלך! (${adv.freezesUsed} נוצלו)` });
+          }
           onStopped?.();
         } else {
           await supabase.from('profiles').update(sessionClear).eq('id', userId);

@@ -10,6 +10,7 @@ import ModalPortal from '../components/ModalPortal';
 import EmptyMascot from '../components/EmptyMascot';
 import ActivationChecklist from '../components/ActivationChecklist';
 import { burstConfetti } from '../lib/confetti';
+import { getStreakStatus } from '../lib/streak';
 
 const TODAY = new Date().toISOString().split('T')[0];
 
@@ -58,7 +59,7 @@ export default function Dashboard({ onNavigate }) {
   const weeklyGoal     = profile?.weekly_goal_hours ?? 20;
   const weeklyMins     = profile?.weekly_studied_minutes ?? 0;
   const weeklyHours    = (weeklyMins / 60).toFixed(1);
-  const streakCurrent  = profile?.streak_current ?? 0;
+  const streakCurrent  = getStreakStatus(profile).streak; // 0 אם הרצף כבר נשבר
   const streakBest     = profile?.streak_best    ?? 0;
 
   const todayTasks    = tasks.filter(t => t.dueDate === TODAY).slice(0, 4);
