@@ -30,6 +30,7 @@ const Achievements   = lazy(() => import('./pages/Achievements'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ResetPassword  = lazy(() => import('./pages/ResetPassword'));
 const LandingPage    = lazy(() => import('./pages/LandingPage'));
+const Premium        = lazy(() => import('./pages/Premium'));
 
 // Capture referral code from URL on app load
 const urlParams = new URLSearchParams(window.location.search);
@@ -51,6 +52,7 @@ const PAGE_MAP = {
   tasks:        { component: Tasks,        title: 'משימות' },
   schedule:     { component: Schedule,     title: 'מערכת שעות' },
   friends:      { component: Friends,      title: 'חברים' },
+  premium:      { component: Premium,      title: 'העוזר הלימודי' },
   avatar:       { component: Avatar,       title: 'סוכן הלימודים שלי' },
   achievements: { component: Achievements, title: 'ארון הגביעים' },
   admin:        { component: AdminDashboard, title: 'חמ"ל' },

@@ -1,1 +1,0 @@
-import{j as a}from"./index-BL8-yL8c.js";import{r as t}from"./vendor-lucide-BUbnwVyZ.js";import"./vendor-react-DZeXgppV.js";import"./vendor-supabase-CVkrZrL3.js";function o(){return t.useEffect(()=>{window.location.replace("/landing.html")},[]),a.jsx("div",{className:"auth-loading",children:a.jsx("div",{className:"auth-spinner"})})}export{o as default};

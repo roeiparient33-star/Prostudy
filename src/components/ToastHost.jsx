@@ -45,7 +45,7 @@ export default function ToastHost() {
               </div>
             </>
           )}
-          {t.type === 'info' && (
+          {(t.type === 'info' || t.type === 'success' || t.type === 'error') && (
             <div className="toast-body"><div className="toast-title">{t.text}</div></div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, BookOpen, CheckSquare, Users, GraduationCap, LogOut, Smile, CalendarDays, Play, Square, Settings2, Trophy, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, BookOpen, CheckSquare, Users, GraduationCap, LogOut, Smile, CalendarDays, Play, Square, Settings2, Trophy, BarChart3, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdmin } from '../lib/admin';
 import { useData } from '../contexts/DataContext';
@@ -34,6 +34,7 @@ const navItems = [
   { id: 'tasks',        label: 'משימות',       icon: CheckSquare },
   { id: 'schedule',     label: 'מערכת שעות',   icon: CalendarDays },
   { id: 'friends',      label: 'חברים',        icon: Users },
+  { id: 'premium',      label: 'העוזר הלימודי', icon: Sparkles, premium: true },
   { id: 'avatar',       label: 'סוכן לימודים', icon: Smile },
   { id: 'achievements', label: 'הישגים',       icon: Trophy },
 ];
@@ -137,14 +138,15 @@ export default function Sidebar({ currentPage, onNavigate }) {
 
       <div className="sidebar-section-label">ניווט</div>
       <nav className="sidebar-nav">
-        {navItems.map(({ id, label, icon: Icon }) => (
+        {navItems.map(({ id, label, icon: Icon, premium }) => (
           <button
             key={id}
-            className={`sidebar-nav-item${currentPage === id ? ' active' : ''}`}
+            className={`sidebar-nav-item${currentPage === id ? ' active' : ''}${premium ? ' premium' : ''}`}
             onClick={() => onNavigate(id)}
           >
             <Icon size={17} className="nav-icon"/>
             {label}
+            {premium && <span className="nav-premium-dot">PRO</span>}
           </button>
         ))}
         {isAdmin(user) && (
