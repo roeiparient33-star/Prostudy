@@ -1,11 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { UserPlus, Search, Check, X, Clock, UserCheck, Copy, Link2, Target, Plus, Users, Handshake } from 'lucide-react';
+import { UserPlus, Search, Check, X, Clock, UserCheck, Copy, Link2, Target, Plus, Users, Handshake, Trophy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import AvatarSVG from '../components/AvatarSVG';
 import ModalPortal from '../components/ModalPortal';
 
 const PROFILE_FIELDS = 'id, name, weekly_studied_minutes, session_active, session_course_name, session_started_at, avatar_config, avatar_purchased';
+
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+function daysUntilSunday() {
+  const d = new Date().getDay(); // 0=Sun
+  return d === 0 ? 7 : 7 - d;
+}
 const APP_URL = window.location.origin;
 
 function fmtElapsed(isoStr) {
@@ -181,22 +188,41 @@ function PactCard({ pact, userId, onLeave, onTasksChanged }) {
         )}
       </div>
 
-      {/* Member progress */}
+      {/* League header */}
+      <div className="pact-league-head">
+        <span><Trophy size={13}/> ליגת השבוע</span>
+        <span className="pact-league-reset">
+          מתאפס בעוד {daysUntilSunday()} ימים
+        </span>
+      </div>
+
+      {/* Member progress — sorted by weekly minutes (league ranking) */}
       <div className="pact-members-list">
-        {members.map(m => {
+        {[...members]
+          .sort((a, b) => (b.profiles?.weekly_studied_minutes || 0) - (a.profiles?.weekly_studied_minutes || 0))
+          .map((m, idx) => {
           const prof = m.profiles || {};
           const mins = prof.weekly_studied_minutes || 0;
           const pct  = target ? Math.min(100, Math.round((mins / target) * 100)) : 0;
           const isMe = prof.id === userId;
+          const medal = MEDALS[idx] ?? `#${idx + 1}`;
+          const isLeader = idx === 0 && mins > 0;
           return (
-            <div key={m.user_id} className="pact-member-row">
+            <div key={m.user_id} className={`pact-member-row${isLeader ? ' league-leader' : ''}`}>
+              <span className="pact-member-medal" aria-label={`מקום ${idx + 1}`}>{medal}</span>
               <div className="pact-member-name">{prof.name || '?'}{isMe ? ' (אתה)' : ''}</div>
               <div className="pact-member-progress">
                 <div className="pact-progress-bar-wrap" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-                  <div className="pact-progress-bar-fill" style={{ width:`${pct}%` }}/>
+                  <div
+                    className="pact-progress-bar-fill"
+                    style={{ width:`${pct}%`, background: isLeader ? 'var(--yellow)' : undefined }}
+                  />
                 </div>
                 <span className="pact-member-hours">{fmtHours(mins)}</span>
-                <span className="pact-member-pct">{pct}%</span>
+                {pct >= 100
+                  ? <span className="pact-target-badge">✓</span>
+                  : <span className="pact-member-pct">{pct}%</span>
+                }
               </div>
             </div>
           );

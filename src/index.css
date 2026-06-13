@@ -5653,3 +5653,39 @@ select:focus-visible {
   display: flex; align-items: center; justify-content: center;
   min-height: 280px;
 }
+
+/* ═══════════ Funnel (Admin) ═══════════ */
+.adm-funnel-card { margin-bottom: 16px; }
+.adm-funnel { display: flex; align-items: center; gap: 0; padding: 8px 0; }
+.adm-funnel-step { flex: 1; min-width: 0; }
+.adm-funnel-arrow {
+  display: flex; flex-direction: column; align-items: center;
+  color: var(--text-3); padding: 0 4px; flex-shrink: 0;
+}
+.adm-funnel-conv { font-size: 10px; font-weight: 700; color: var(--text-3); margin-top: 2px; }
+.adm-funnel-bar-wrap {
+  height: 10px; background: var(--bg-hover); border-radius: 99px;
+  overflow: hidden; margin-bottom: 6px; border: 1px solid var(--border);
+}
+.adm-funnel-bar { height: 100%; border-radius: 99px; transition: width .6s var(--transition); }
+.adm-funnel-meta { display: flex; justify-content: space-between; align-items: baseline; }
+.adm-funnel-label { font-size: 11px; color: var(--text-2); font-weight: 600; }
+.adm-funnel-val   { font-size: 13px; font-weight: 800; color: var(--text); }
+
+/* ═══════════ League (Pact) ═══════════ */
+.pact-league-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 700; color: var(--text-2);
+  padding: 8px 0 6px; margin-bottom: 4px;
+  border-bottom: 1.5px dashed var(--border);
+}
+.pact-league-head svg { color: var(--yellow); }
+.pact-league-reset { font-size: 11px; color: var(--text-3); font-weight: 600; }
+.pact-member-medal { width: 22px; font-size: 14px; flex-shrink: 0; text-align: center; }
+.pact-member-row { display: flex; align-items: center; gap: 8px; }
+.pact-member-row.league-leader .pact-member-name { color: var(--accent); font-weight: 700; }
+.pact-target-badge {
+  font-size: 10px; font-weight: 800; color: var(--green);
+  background: var(--green-dim); border-radius: 99px; padding: 1px 6px;
+  white-space: nowrap;
+}

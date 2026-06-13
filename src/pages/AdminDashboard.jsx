@@ -3,6 +3,7 @@ import {
   Users, UserPlus, Activity, Gem, RefreshCw, CheckSquare, BookOpen,
   GraduationCap, Share2, Flag, Sparkles, AlertTriangle, CalendarCheck,
   Target, Rocket, TrendingUp, Database, ChevronDown, Clock, Coins, Trophy,
+  ArrowLeft,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -158,6 +159,40 @@ function SignupChart({ data }) {
   );
 }
 
+function ConversionFunnel({ stats }) {
+  if (!stats) return null;
+  const steps = [
+    { label: 'נרשמו',          value: stats.total_users    || 0, color: 'var(--blue)'   },
+    { label: 'למדו אי-פעם',    value: stats.had_session    || 0, color: 'var(--accent)' },
+    { label: 'פעילים השבוע',   value: stats.wau_studied    || 0, color: 'var(--green)'  },
+    { label: 'השלימו אקטיבציה',value: stats.activation_claimed || 0, color: 'var(--purple)'},
+  ];
+  const top = steps[0].value || 1;
+  return (
+    <div className="adm-card adm-funnel-card">
+      <div className="adm-card-title"><TrendingUp size={15}/> משפך המרה</div>
+      <div className="adm-funnel">
+        {steps.map((s, i) => {
+          const pct = Math.round((s.value / top) * 100);
+          const conv = i > 0 ? Math.round((s.value / (steps[i-1].value || 1)) * 100) : 100;
+          return (
+            <div key={s.label} className="adm-funnel-step">
+              {i > 0 && <div className="adm-funnel-arrow"><ArrowLeft size={14}/><span className="adm-funnel-conv">{conv}%</span></div>}
+              <div className="adm-funnel-bar-wrap">
+                <div className="adm-funnel-bar" style={{ width:`${pct}%`, background: s.color }}/>
+              </div>
+              <div className="adm-funnel-meta">
+                <span className="adm-funnel-label">{s.label}</span>
+                <span className="adm-funnel-val">{fmtNum(s.value)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MiniStat({ icon: Icon, label, value, sub }) {
   return (
     <div className="adm-mini">
@@ -296,6 +331,9 @@ export default function AdminDashboard() {
                  value={stats ? fmtNum(stats.paying_subscribers) : '—'}
                  sub="Premium טרם הושק — שלב 2"/>
       </div>
+
+      {/* ── Funnel ── */}
+      <ConversionFunnel stats={stats}/>
 
       {/* ── Chart + engagement ── */}
       <div className="adm-row">
