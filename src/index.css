@@ -5819,6 +5819,17 @@ select:focus-visible {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .material-row-meta { font-size: 11px; color: var(--text-3); }
+/* כפתור PDF על תשובות AI */
+.ai-msg-assistant-wrap { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.ai-msg-pdf-btn {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; color: var(--text-2);
+  border: 1px solid var(--border); border-radius: 99px; padding: 5px 12px;
+  background: var(--bg-card); cursor: pointer; transition: all var(--transition);
+}
+.ai-msg-pdf-btn:hover { border-color: var(--accent); color: var(--accent-dark); background: var(--accent-dim); }
+
 .material-row-dl {
   flex-shrink: 0; color: var(--accent); padding: 4px; border-radius: 6px;
   transition: background var(--transition);
