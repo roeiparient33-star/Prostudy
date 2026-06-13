@@ -1,6 +1,43 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, FileText, X, BookOpenCheck, ListChecks, Loader2, Download } from 'lucide-react';
+import { Send, Sparkles, FileText, X, BookOpenCheck, ListChecks, Download } from 'lucide-react';
 import { renderMarkdown } from '../lib/markdown';
+
+const LOADING_MSGS = [
+  'קורא את הקובץ...',
+  'מנתח את החומר...',
+  'בונה סיכום...',
+  'בודק נוסחאות...',
+  'מסיים...',
+];
+
+function AILoading() {
+  const [msgIdx, setMsgIdx] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setMsgIdx(i => (i + 1) % LOADING_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, []);
+
+  // אם יש GIF/וידאו של אווטר — פשוט מחליפים את ה-div.ai-load-avatar ב:
+  // <img src="/avatar-loading.gif" className="ai-load-avatar-img" />
+  return (
+    <div className="ai-loading">
+      <div className="ai-load-orbit">
+        <div className="ai-load-center">
+          <Sparkles size={28} color="var(--accent)" />
+        </div>
+        <div className="ai-load-ring">
+          <span className="ai-load-dot" style={{ '--i': 0 }} />
+          <span className="ai-load-dot" style={{ '--i': 1 }} />
+          <span className="ai-load-dot" style={{ '--i': 2 }} />
+          <span className="ai-load-dot" style={{ '--i': 3 }} />
+        </div>
+      </div>
+      <div className="ai-load-msg">{LOADING_MSGS[msgIdx]}</div>
+      <div className="ai-load-sub">המורה הפרטי שלך עובד על זה...</div>
+    </div>
+  );
+}
 
 // פותח חלון הדפסה עם התוכן — משם המשתמש שומר כ-PDF דרך הדפדפן
 function downloadAsPDF(content, fileName = 'סיכום') {
@@ -121,17 +158,7 @@ export default function AIChat({ messages, streamingText, activeFile, busy, onSe
           </div>
         ))}
 
-        {streamingText != null && (
-          <div className="ai-msg assistant">
-            <div className="ai-msg-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(streamingText) }}/>
-            <span className="ai-cursor"/>
-          </div>
-        )}
-        {busy && streamingText == null && (
-          <div className="ai-msg assistant">
-            <div className="ai-typing"><Loader2 size={16} className="spin"/> חושב...</div>
-          </div>
-        )}
+        {busy && <AILoading />}
       </div>
 
       <div className="ai-chat-input">
