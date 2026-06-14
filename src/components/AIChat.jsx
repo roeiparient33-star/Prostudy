@@ -158,6 +158,12 @@ function downloadAsPDF(content, fileName = 'סיכום') {
     padding:20px;margin:18px 0;overflow-x:auto;}
   .content .svg-figure svg,.content .mermaid svg{max-width:100%;height:auto;}
 
+  /* ── גרפים: Chart.js ── */
+  .content .chart-figure{position:relative;height:330px;
+    background:#fff;border:1px solid var(--border);border-radius:12px;
+    padding:18px;margin:18px 0;}
+  .content .chart-figure canvas{max-width:100%;}
+
   /* ── כותרת תחתונה ── */
   .footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);
     text-align:center;color:var(--dim);font-size:12px;font-weight:500;}
@@ -184,9 +190,10 @@ function downloadAsPDF(content, fileName = 'סיכום') {
 </div>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
 <script type="module">
-  // mermaid נטען רק אם יש תרשים בדף — חוסך טעינה מיותרת
+  // mermaid ו-Chart.js נטענים רק אם יש בהם צורך בדף — חוסך טעינה מיותרת
   var hasMermaid = document.querySelector('.mermaid');
-  function finish(){ setTimeout(function(){ window.print(); }, 700); }
+  var charts = document.querySelectorAll('.chart-figure');
+  function finish(){ setTimeout(function(){ window.print(); }, 850); }
   window.addEventListener('load', async function(){
     try { if (window.hljs) hljs.highlightAll(); } catch(e){}
     if (hasMermaid) {
@@ -194,6 +201,32 @@ function downloadAsPDF(content, fileName = 'סיכום') {
         var m = await import('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
         m.default.initialize({ startOnLoad: false, theme: 'neutral' });
         await m.default.run({ querySelector: '.mermaid' });
+      } catch(e){}
+    }
+    if (charts.length) {
+      try {
+        var mod = await import('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/auto/+esm');
+        var Chart = mod.default;
+        Chart.defaults.font.family = 'Heebo, sans-serif';
+        Chart.defaults.font.size = 13;
+        Chart.defaults.color = '#5a5044';
+        Chart.defaults.animation = false;
+        Chart.defaults.borderColor = 'rgba(0,0,0,.08)';
+        // פלטת מותג כתומה כברירת מחדל
+        var palette = ['#FF6524','#82aaff','#10b981','#f59e0b','#c792ea','#ef4444'];
+        charts.forEach(function(el){
+          try {
+            var cfg = JSON.parse(el.getAttribute('data-chart'));
+            cfg.options = cfg.options || {};
+            cfg.options.responsive = true;
+            cfg.options.maintainAspectRatio = false;
+            (cfg.data.datasets || []).forEach(function(ds, i){
+              if (ds.backgroundColor === undefined) ds.backgroundColor = palette[i % palette.length];
+              if (ds.borderColor === undefined) ds.borderColor = palette[i % palette.length];
+            });
+            new Chart(el.querySelector('canvas'), cfg);
+          } catch(e){ el.innerHTML = '<div style="padding:20px;color:#b00">שגיאה בטעינת הגרף</div>'; }
+        });
       } catch(e){}
     }
     finish();

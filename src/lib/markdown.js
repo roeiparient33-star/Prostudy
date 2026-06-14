@@ -54,6 +54,17 @@ export function renderMarkdown(md) {
     return key;
   });
 
+  // Chart.js — גרפים של נתונים (פיזור/קו/עמודות/עוגה). Claude מוציא JSON תקין,
+  // והספרייה בחלון ה-PDF מרנדרת גרף מקצועי בלי טעויות מיקום.
+  md = md.replace(/```chart\s*([\s\S]+?)```/gi, (_, cfg) => {
+    const key = `\x00MATH${mathIdx++}\x00`;
+    const esc = cfg.trim()
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    mathMap[key] = `<div class="chart-figure" data-chart="${esc}"><canvas></canvas></div>`;
+    return key;
+  });
+
   // Mermaid — תרשימי זרימה/עצים; mermaid.js בחלון ה-PDF מרנדר את התוכן
   md = md.replace(/```mermaid\s*([\s\S]+?)```/gi, (_, code) => {
     const key = `\x00MATH${mathIdx++}\x00`;
