@@ -116,6 +116,33 @@ const AUTOMATIONS = [
 
 const fmtNum = n => (n ?? 0).toLocaleString('he-IL');
 
+/* ── תמחור Anthropic לכל מיליון טוקנים (USD) ──
+   cache read = 10% ממחיר ה-input · cache write (TTL שעה) = פי 2 ממחיר ה-input */
+const PRICING = {
+  'claude-opus-4-8':   { in: 5, out: 25, label: 'Opus' },
+  'claude-sonnet-4-6': { in: 3, out: 15, label: 'Sonnet' },
+  'claude-haiku-4-5':  { in: 1, out: 5,  label: 'Haiku' },
+};
+const priceOf = m => PRICING[m] || PRICING['claude-sonnet-4-6'];
+const USD_TO_ILS = 3.7;
+const ACTION_HE = { summary: 'סיכום', question: 'שאלה', practice: 'תרגול', solve: 'פתרון' };
+
+// עלות שורה/סיכום ($), מקבל אובייקט עם ספירות טוקנים + model
+function costUSD(row) {
+  const p = priceOf(row.model);
+  return (
+    (row.input_tokens  || 0) / 1e6 * p.in +
+    (row.output_tokens || 0) / 1e6 * p.out +
+    (row.cache_read_tokens  || 0) / 1e6 * (p.in * 0.1) +
+    (row.cache_write_tokens || 0) / 1e6 * (p.in * 2)
+  );
+}
+const sumCost   = arr => (arr || []).reduce((s, r) => s + costUSD(r), 0);
+const sumTokens = arr => (arr || []).reduce(
+  (s, r) => s + (r.input_tokens||0) + (r.output_tokens||0) + (r.cache_read_tokens||0) + (r.cache_write_tokens||0), 0);
+const fmtUSD = n => `$${n.toFixed(n < 1 ? 4 : 2)}`;
+const fmtILS = n => `₪${(n * USD_TO_ILS).toFixed(2)}`;
+
 function KpiCard({ icon: Icon, label, value, sub, color, delta }) {
   return (
     <div className="adm-kpi" style={{ '--kpi-color': color }}>
@@ -205,6 +232,92 @@ function MiniStat({ icon: Icon, label, value, sub }) {
   );
 }
 
+function AiCostPanel({ costs, error }) {
+  if (error) {
+    return (
+      <div className="adm-card">
+        <div className="adm-card-title"><Coins size={15}/> עלות ה-AI בזמן אמת</div>
+        <div className="adm-setup" style={{ margin: 0 }}>
+          <Database size={18}/>
+          <div>
+            <strong>פאנל העלויות עדיין לא מחובר.</strong>
+            <p>הרץ ב-Supabase → SQL Editor את הקובץ <code>add_ai_costs.sql</code>, ואז רענן.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (!costs) return null;
+
+  const today = sumCost(costs.by_model_today);
+  const month = sumCost(costs.by_model_month);
+  const all   = sumCost(costs.by_model_all);
+  const callsToday = (costs.by_model_today || []).reduce((s, r) => s + (r.calls || 0), 0);
+
+  return (
+    <div className="adm-card adm-cost-card">
+      <div className="adm-card-title">
+        <Coins size={15}/> עלות ה-AI בזמן אמת
+        <span className="adm-live-dot" title="מתעדכן אוטומטית"/>
+      </div>
+
+      <div className="adm-cost-kpis">
+        <div className="adm-cost-kpi">
+          <div className="adm-cost-val">{fmtUSD(today)}</div>
+          <div className="adm-cost-lbl">היום · {fmtNum(callsToday)} פעולות</div>
+          <div className="adm-cost-ils">{fmtILS(today)}</div>
+        </div>
+        <div className="adm-cost-kpi">
+          <div className="adm-cost-val">{fmtUSD(month)}</div>
+          <div className="adm-cost-lbl">החודש</div>
+          <div className="adm-cost-ils">{fmtILS(month)}</div>
+        </div>
+        <div className="adm-cost-kpi">
+          <div className="adm-cost-val">{fmtUSD(all)}</div>
+          <div className="adm-cost-lbl">מאז ומתמיד · {fmtNum(Math.round(sumTokens(costs.by_model_all) / 1000))}K טוקנים</div>
+          <div className="adm-cost-ils">{fmtILS(all)}</div>
+        </div>
+      </div>
+
+      {/* פירוק לפי מודל (החודש) */}
+      {(costs.by_model_month || []).length > 0 && (
+        <table className="adm-table" style={{ marginTop: 14 }}>
+          <thead><tr><th>מודל</th><th>פעולות</th><th>טוקנים</th><th>עלות החודש</th></tr></thead>
+          <tbody>
+            {costs.by_model_month.map(r => (
+              <tr key={r.model}>
+                <td>{priceOf(r.model).label}</td>
+                <td>{fmtNum(r.calls)}</td>
+                <td dir="ltr">{fmtNum(Math.round(sumTokens([r]) / 1000))}K</td>
+                <td dir="ltr">{fmtUSD(costUSD(r))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* פיד חי */}
+      <div className="adm-cost-feed-title">פעולות אחרונות</div>
+      <div className="adm-cost-feed">
+        {(costs.recent || []).length === 0
+          ? <div className="adm-cost-feed-empty">עדיין אין שימוש</div>
+          : costs.recent.map((r, i) => (
+            <div key={i} className="adm-cost-feed-row">
+              <span className="adm-cost-feed-time">
+                {new Date(r.created_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+              <span className="adm-cost-feed-user" title={r.email}>{(r.email || '').split('@')[0]}</span>
+              <span className="adm-cost-feed-action">{ACTION_HE[r.action] || r.action}</span>
+              <span className="adm-cost-feed-model">{priceOf(r.model).label}</span>
+              <span className="adm-cost-feed-cost" dir="ltr">{fmtUSD(costUSD(r))}</span>
+            </div>
+          ))}
+      </div>
+      <div className="adm-cost-note">העלות בדולרים (Anthropic) · ₪ לפי שער ~{USD_TO_ILS}</div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const { user, profile, updateProfile } = useAuth();
   const [stats, setStats]     = useState(null);
@@ -232,6 +345,9 @@ export default function AdminDashboard() {
     });
   }, [updateProfile]);
 
+  const [costs, setCosts]         = useState(null);
+  const [costErr, setCostErr]     = useState(null);
+
   const fetchStats = useCallback(async () => {
     setLoading(true);
     const { data, error: err } = await supabase.rpc('admin_get_stats');
@@ -240,7 +356,19 @@ export default function AdminDashboard() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  const fetchCosts = useCallback(async () => {
+    const { data, error: err } = await supabase.rpc('admin_get_ai_costs');
+    if (err) setCostErr(err.message);
+    else { setCosts(data); setCostErr(null); }
+  }, []);
+
+  useEffect(() => { fetchStats(); fetchCosts(); }, [fetchStats, fetchCosts]);
+
+  // רענון חי של העלויות כל 20 שניות — רואים שימוש כמעט בזמן אמת
+  useEffect(() => {
+    const t = setInterval(fetchCosts, 20000);
+    return () => clearInterval(t);
+  }, [fetchCosts]);
 
   // current phase = first phase whose live metric is below target (manual phases skipped)
   const currentPhase = useMemo(() => {
@@ -274,7 +402,7 @@ export default function AdminDashboard() {
             {updatedAt && <span className="adm-updated"> · עודכן {updatedAt.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</span>}
           </p>
         </div>
-        <button className="adm-refresh" onClick={fetchStats} disabled={loading}>
+        <button className="adm-refresh" onClick={() => { fetchStats(); fetchCosts(); }} disabled={loading}>
           <RefreshCw size={14} className={loading ? 'adm-spin' : ''}/> רענן
         </button>
       </div>
@@ -358,6 +486,9 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── AI cost (live) ── */}
+      <AiCostPanel costs={costs} error={costErr}/>
 
       {/* ── The plan ── */}
       <div className="adm-section-head">

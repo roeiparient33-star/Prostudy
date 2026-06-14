@@ -5448,6 +5448,41 @@ select:focus-visible {
 }
 .adm-warn-card .adm-list li::before { background: var(--red); }
 
+/* ── AI cost panel ── */
+.adm-cost-card { margin-bottom: 22px; }
+.adm-live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+  margin-inline-start: 8px; display: inline-block;
+  animation: adm-pulse 1.6s ease-in-out infinite;
+}
+@keyframes adm-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+.adm-cost-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.adm-cost-kpi {
+  background: var(--bg-main); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 14px 16px; text-align: center;
+}
+.adm-cost-val { font-size: 24px; font-weight: 900; color: var(--accent-dark); letter-spacing: -0.5px; }
+.adm-cost-lbl { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+.adm-cost-ils { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.adm-cost-feed-title { font-size: 12px; font-weight: 800; color: var(--text-2); margin: 16px 0 8px; }
+.adm-cost-feed { display: flex; flex-direction: column; gap: 2px; max-height: 280px; overflow-y: auto; }
+.adm-cost-feed-empty { font-size: 12.5px; color: var(--text-3); text-align: center; padding: 16px 0; }
+.adm-cost-feed-row {
+  display: grid; grid-template-columns: 48px 1fr auto auto auto;
+  gap: 8px; align-items: center; padding: 7px 8px; border-radius: 7px;
+  font-size: 12.5px; border-bottom: 1px solid var(--border-light);
+}
+.adm-cost-feed-row:hover { background: var(--bg-hover); }
+.adm-cost-feed-time { color: var(--text-3); font-size: 11px; }
+.adm-cost-feed-user { font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-cost-feed-action {
+  font-size: 11px; font-weight: 700; color: var(--accent-dark);
+  background: var(--accent-dim); border-radius: 99px; padding: 1px 9px;
+}
+.adm-cost-feed-model { font-size: 11px; color: var(--text-3); }
+.adm-cost-feed-cost { font-weight: 800; color: var(--green); }
+.adm-cost-note { font-size: 11px; color: var(--text-3); margin-top: 10px; text-align: center; }
+
 /* responsive */
 @media (max-width: 1100px) {
   .adm-kpi-grid { grid-template-columns: 1fr 1fr; }
