@@ -5896,6 +5896,50 @@ select:focus-visible {
 }
 .ai-summary-card:hover .ai-summary-card-dl { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+/* ── תשובת שאלה inline בצ'אט ── */
+.ai-msg-md {
+  background: var(--bg-main); border: 1px solid var(--border);
+  border-radius: 5px 18px 18px 18px; padding: 14px 18px;
+  font-size: 14px; line-height: 1.75; color: var(--text); word-break: break-word;
+}
+.ai-msg-md h1, .ai-msg-md h2, .ai-msg-md h3, .ai-msg-md h4 {
+  font-weight: 800; color: var(--text); margin: 12px 0 6px; line-height: 1.3;
+}
+.ai-msg-md h1 { font-size: 18px; } .ai-msg-md h2 { font-size: 16px; }
+.ai-msg-md h3 { font-size: 15px; } .ai-msg-md h4 { font-size: 14px; }
+.ai-msg-md h1:first-child, .ai-msg-md h2:first-child, .ai-msg-md h3:first-child { margin-top: 0; }
+.ai-msg-md p { margin: 0 0 8px; }
+.ai-msg-md p:last-child { margin-bottom: 0; }
+.ai-msg-md strong { font-weight: 800; color: var(--accent-dark); }
+.ai-msg-md em { font-style: italic; color: var(--text-2); }
+.ai-msg-md a { color: var(--blue); text-decoration: underline; }
+.ai-msg-md ul, .ai-msg-md ol { margin: 6px 0 10px; padding-inline-start: 20px; }
+.ai-msg-md li { margin: 3px 0; }
+.ai-msg-md code {
+  background: var(--accent-dim); color: var(--accent-dark);
+  border-radius: 5px; padding: 1px 6px; direction: ltr; display: inline-block;
+  font-family: 'Fira Code', 'SF Mono', Menlo, monospace; font-size: 0.86em;
+}
+.ai-msg-md pre {
+  background: #1a1714; color: #f0ebe3; border-radius: 10px;
+  padding: 14px; overflow-x: auto; margin: 10px 0; direction: ltr; font-size: 13px;
+}
+.ai-msg-md pre code { background: none; color: inherit; padding: 0; }
+.ai-msg-md blockquote {
+  border-inline-start: 3px solid var(--accent); background: var(--accent-dim);
+  padding: 8px 12px; margin: 8px 0; border-radius: 0 8px 8px 0; color: var(--text-2);
+}
+.ai-msg-md hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+.ai-msg-md table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+.ai-msg-md th { background: var(--accent-dim); color: var(--accent-dark); padding: 8px 10px; text-align: right; font-weight: 700; }
+.ai-msg-md td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+.ai-msg-md .katex { font-size: 1.05em; }
+.ai-msg-md .math-block {
+  display: flex; justify-content: center; background: var(--accent-dim);
+  border-radius: 8px; padding: 12px; margin: 10px 0; direction: ltr; overflow-x: auto;
+}
+.ai-msg-md .math-inline { direction: ltr; display: inline-block; }
+
 /* ── AI loading screen ── */
 .ai-loading {
   display: flex; flex-direction: column; align-items: center; justify-content: center;

@@ -110,8 +110,12 @@ export async function createConversation(fileId, title) {
   return data;
 }
 
-export async function saveMessage(conversationId, role, content) {
-  await supabase.from('ai_messages').insert({ conversation_id: conversationId, role, content });
+// kind: סוג הפעולה ('question'/'summary'/'practice'/'solve') — קובע אם התשובה
+// מוצגת בצ'אט (question) או ככרטיס PDF (השאר). fallback אם עמודת kind עוד לא קיימת.
+export async function saveMessage(conversationId, role, content, kind = null) {
+  const base = { conversation_id: conversationId, role, content };
+  const { error } = await supabase.from('ai_messages').insert(kind ? { ...base, kind } : base);
+  if (error && kind) await supabase.from('ai_messages').insert(base);
 }
 
 export async function listConversations() {
@@ -124,12 +128,13 @@ export async function listConversations() {
 }
 
 export async function loadConversationMessages(conversationId) {
+  // select('*') כדי לקבל גם את kind כשהעמודה קיימת, בלי לשבור לפני המיגרציה
   const { data } = await supabase
     .from('ai_messages')
-    .select('role, content')
+    .select('*')
     .eq('conversation_id', conversationId)
     .order('created_at');
-  return data || [];
+  return (data || []).map(m => ({ role: m.role, content: m.content, kind: m.kind ?? null }));
 }
 
 export async function deleteConversation(conversationId) {

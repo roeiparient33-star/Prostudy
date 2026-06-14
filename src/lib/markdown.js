@@ -2,6 +2,7 @@
 // משמש בעיקר לייצוא PDF. מתמטיקה: $$...$$ לבלוק, $...$ לאינליין.
 // צביעת תחביר של קוד נעשית בצד ה-PDF (highlight.js מ-CDN) דרך class="language-X".
 import katex from 'katex';
+import 'katex/dist/katex.min.css'; // נדרש לתצוגת מתמטיקה inline בתשובות שאלה בצ'אט
 
 function escapeHtml(s) {
   return s

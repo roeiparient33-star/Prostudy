@@ -141,9 +141,9 @@ export default function Premium() {
         onChunk: (full) => setStreaming(full),
       });
 
-      // שמור תשובת AI ל-DB
-      await saveMessage(currentConvId, 'assistant', text);
-      setMessages(p => [...p, { role: 'assistant', content: text }]);
+      // שמור תשובת AI ל-DB עם סוג הפעולה (question = תצוגה בצ'אט, השאר = כרטיס PDF)
+      await saveMessage(currentConvId, 'assistant', text, action);
+      setMessages(p => [...p, { role: 'assistant', content: text, kind: action }]);
       setStreaming(null);
       bumpUsed(left);
 

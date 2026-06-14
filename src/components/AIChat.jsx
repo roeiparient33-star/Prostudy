@@ -10,6 +10,13 @@ const LOADING_MSGS = [
   'מסיים...',
 ];
 
+// כותרת כרטיס ה-PDF לפי סוג הפעולה
+const CARD_TITLE = {
+  summary:  'הסיכום מוכן',
+  practice: 'שאלות התרגול מוכנות',
+  solve:    'הפתרון המלא מוכן',
+};
+
 function AILoading() {
   const [msgIdx, setMsgIdx] = useState(0);
 
@@ -318,18 +325,24 @@ export default function AIChat({ messages, streamingText, activeFile, busy, onSe
         {messages.map((m, i) => (
           <div key={i} className={`ai-msg ${m.role}`}>
             {m.role === 'assistant' ? (
-              <button
-                className="ai-summary-card"
-                title="הורד כ-PDF"
-                onClick={() => downloadAsPDF(m.content, activeFile?.file_name?.replace(/\.[^.]+$/, '') || 'סיכום')}
-              >
-                <div className="ai-summary-card-icon"><FileText size={20}/></div>
-                <div className="ai-summary-card-info">
-                  <div className="ai-summary-card-title">הסיכום מוכן</div>
-                  <div className="ai-summary-card-sub">לחץ להורדה כקובץ PDF מעוצב</div>
-                </div>
-                <div className="ai-summary-card-dl"><Download size={18}/></div>
-              </button>
+              m.kind === 'question' ? (
+                // שאלה מהירה — תשובה ישירות בצ'אט
+                <div className="ai-msg-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}/>
+              ) : (
+                // סיכום/תרגול/פתרון — כרטיס להורדת PDF
+                <button
+                  className="ai-summary-card"
+                  title="הורד כ-PDF"
+                  onClick={() => downloadAsPDF(m.content, activeFile?.file_name?.replace(/\.[^.]+$/, '') || 'סיכום')}
+                >
+                  <div className="ai-summary-card-icon"><FileText size={20}/></div>
+                  <div className="ai-summary-card-info">
+                    <div className="ai-summary-card-title">{CARD_TITLE[m.kind] || 'התוצאה מוכנה'}</div>
+                    <div className="ai-summary-card-sub">לחץ להורדה כקובץ PDF מעוצב</div>
+                  </div>
+                  <div className="ai-summary-card-dl"><Download size={18}/></div>
+                </button>
+              )
             ) : (
               <div className="ai-msg-text">{m.content}</div>
             )}
