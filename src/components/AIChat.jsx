@@ -208,23 +208,49 @@ function downloadAsPDF(content, fileName = 'סיכום') {
         var mod = await import('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/auto/+esm');
         var Chart = mod.default;
         Chart.defaults.font.family = 'Heebo, sans-serif';
-        Chart.defaults.font.size = 13;
-        Chart.defaults.color = '#5a5044';
         Chart.defaults.animation = false;
-        Chart.defaults.borderColor = 'rgba(0,0,0,.08)';
-        // פלטת מותג כתומה כברירת מחדל
-        var palette = ['#FF6524','#82aaff','#10b981','#f59e0b','#c792ea','#ef4444'];
+        var palette = ['#FF6524','#3b82f6','#10b981','#f59e0b','#a855f7','#ef4444'];
         charts.forEach(function(el){
           try {
-            var cfg = JSON.parse(el.getAttribute('data-chart'));
-            cfg.options = cfg.options || {};
-            cfg.options.responsive = true;
-            cfg.options.maintainAspectRatio = false;
-            (cfg.data.datasets || []).forEach(function(ds, i){
-              if (ds.backgroundColor === undefined) ds.backgroundColor = palette[i % palette.length];
-              if (ds.borderColor === undefined) ds.borderColor = palette[i % palette.length];
+            var raw = JSON.parse(el.getAttribute('data-chart'));
+            var datasets = (raw.data && raw.data.datasets) || [];
+            var multi = datasets.length > 1;
+            datasets.forEach(function(ds, i){
+              var c = palette[i % palette.length];
+              if (ds.backgroundColor === undefined) ds.backgroundColor = c;
+              if (ds.borderColor === undefined) ds.borderColor = c;
+              if (ds.pointRadius === undefined) ds.pointRadius = 5;
+              if (ds.borderWidth === undefined) ds.borderWidth = 2.5;
+              if (ds.tension === undefined) ds.tension = 0.3;
             });
-            new Chart(el.querySelector('canvas'), cfg);
+            // house style נקי — מתעלמים מעיצוב Excel-י של המודל, שומרים רק כותרות
+            var o = raw.options || {};
+            var t  = (o.plugins && o.plugins.title) || {};
+            var s  = o.scales || {};
+            var xt = (s.x && s.x.title) || {};
+            var yt = (s.y && s.y.title) || {};
+            var muted = '#9a9185', soft = '#7a7165';
+            var clean = {
+              responsive: true, maintainAspectRatio: false,
+              layout: { padding: 18 },
+              plugins: {
+                legend: { display: multi, position: 'bottom',
+                  labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8,
+                    padding: 18, font: { size: 12, family: 'Heebo' }, color: '#5a5044' } },
+                title: { display: !!t.text, text: t.text || '', color: '#2a251f',
+                  font: { size: 16, weight: '800', family: 'Heebo' }, padding: { bottom: 18 } },
+                tooltip: { enabled: false }
+              },
+              scales: {
+                x: { grid: { display: false }, border: { color: '#ddd5c9' },
+                  ticks: { color: muted, font: { size: 11, family: 'Heebo' } },
+                  title: { display: !!xt.text, text: xt.text || '', color: soft, font: { size: 12, family: 'Heebo' } } },
+                y: { grid: { color: '#f0ece4' }, border: { display: false },
+                  ticks: { color: muted, font: { size: 11, family: 'Heebo' } },
+                  title: { display: !!yt.text, text: yt.text || '', color: soft, font: { size: 12, family: 'Heebo' } } }
+              }
+            };
+            new Chart(el.querySelector('canvas'), { type: raw.type, data: raw.data, options: clean });
           } catch(e){ el.innerHTML = '<div style="padding:20px;color:#b00">שגיאה בטעינת הגרף</div>'; }
         });
       } catch(e){}
