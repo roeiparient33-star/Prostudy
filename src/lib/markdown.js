@@ -42,6 +42,25 @@ export function renderMarkdown(md) {
   const mathMap = {};
   let mathIdx = 0;
 
+  // SVG גולמי — חלץ לפני escaping כדי שהתגיות יישמרו (גרפים, צורות, צירים)
+  md = md.replace(/```svg\s*([\s\S]+?)```/gi, (_, svg) => {
+    const key = `\x00MATH${mathIdx++}\x00`;
+    mathMap[key] = `<div class="svg-figure">${svg.trim()}</div>`;
+    return key;
+  });
+  md = md.replace(/<svg[\s\S]*?<\/svg>/gi, (svg) => {
+    const key = `\x00MATH${mathIdx++}\x00`;
+    mathMap[key] = `<div class="svg-figure">${svg}</div>`;
+    return key;
+  });
+
+  // Mermaid — תרשימי זרימה/עצים; mermaid.js בחלון ה-PDF מרנדר את התוכן
+  md = md.replace(/```mermaid\s*([\s\S]+?)```/gi, (_, code) => {
+    const key = `\x00MATH${mathIdx++}\x00`;
+    mathMap[key] = `<pre class="mermaid">${escapeHtml(code.trim())}</pre>`;
+    return key;
+  });
+
   md = md.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
     const key = `\x00MATH${mathIdx++}\x00`;
     mathMap[key] = `<div class="math-block">${renderKatex(math, true)}</div>`;

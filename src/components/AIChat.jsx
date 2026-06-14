@@ -152,6 +152,12 @@ function downloadAsPDF(content, fileName = 'סיכום') {
   .content .katex{font-size:1.1em;color:var(--text);}
   .content .math-block .katex{font-size:1.25em;}
 
+  /* ── ויזואלים: SVG ו-Mermaid ── */
+  .content .svg-figure,.content .mermaid{display:flex;justify-content:center;
+    background:#fbf9f5;border:1px solid var(--border);border-radius:12px;
+    padding:20px;margin:18px 0;overflow-x:auto;}
+  .content .svg-figure svg,.content .mermaid svg{max-width:100%;height:auto;}
+
   /* ── כותרת תחתונה ── */
   .footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);
     text-align:center;color:var(--dim);font-size:12px;font-weight:500;}
@@ -177,10 +183,20 @@ function downloadAsPDF(content, fileName = 'סיכום') {
   <div class="footer">נוצר באמצעות ProStudy AI · ${dateStr}</div>
 </div>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-<script>
-  window.addEventListener('load', function(){
+<script type="module">
+  // mermaid נטען רק אם יש תרשים בדף — חוסך טעינה מיותרת
+  var hasMermaid = document.querySelector('.mermaid');
+  function finish(){ setTimeout(function(){ window.print(); }, 700); }
+  window.addEventListener('load', async function(){
     try { if (window.hljs) hljs.highlightAll(); } catch(e){}
-    setTimeout(function(){ window.print(); }, 650);
+    if (hasMermaid) {
+      try {
+        var m = await import('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
+        m.default.initialize({ startOnLoad: false, theme: 'neutral' });
+        await m.default.run({ querySelector: '.mermaid' });
+      } catch(e){}
+    }
+    finish();
   });
 </script>
 </body>
