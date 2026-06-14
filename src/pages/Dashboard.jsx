@@ -66,8 +66,7 @@ export default function Dashboard({ onNavigate }) {
   const upcomingExams = [...exams]
     .map(e => ({ ...e, days: daysUntil(e.date) }))
     .filter(e => e.days >= 0)
-    .sort((a, b) => a.days - b.days)
-    .slice(0, 4);
+    .sort((a, b) => a.days - b.days);
   const courseById = Object.fromEntries(courses.map(c => [c.id, c]));
 
   const weeklyPct = Math.min(100, Math.round((weeklyMins / (weeklyGoal * 60)) * 100));
