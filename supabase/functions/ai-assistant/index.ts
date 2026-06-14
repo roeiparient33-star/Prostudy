@@ -121,8 +121,12 @@ Deno.serve(async (req) => {
   const route = ROUTING[action] ?? ROUTING.question;
 
   // ── 5. הורדת הקובץ מ-Storage (אם יש) ──
+  // שאלת המשך (question + יש כבר היסטוריה): הידע כבר עובד וקיים בשיחה,
+  // אין צורך לשלוח שוב את המסמך המלא — חיסכון אדיר בטוקנים.
+  // סיכום/פתרון/תרגול תמיד קוראים את המסמך (צריך גישה למקור).
+  const isFollowUp = action === "question" && (history?.length ?? 0) > 0;
   const content: Anthropic.ContentBlockParam[] = [];
-  if (filePath) {
+  if (filePath && !isFollowUp) {
     // אבטחה: ודא שהקובץ שייך למשתמש (הנתיב מתחיל ב-user.id)
     if (!filePath.startsWith(`${user.id}/`)) return jsonError("forbidden", 403);
 
