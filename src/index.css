@@ -5988,7 +5988,7 @@ select:focus-visible {
 }
 .ai-load-orbit { position: relative; width: 100px; height: 100px; }
 .ai-load-center {
-  position: absolute; inset: 50%; transform: translate(-50%, -50%);
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   width: 52px; height: 52px; border-radius: 50%;
   background: var(--accent-dim); border: 2px solid var(--accent);
   display: flex; align-items: center; justify-content: center;
