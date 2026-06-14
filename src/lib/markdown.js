@@ -66,13 +66,6 @@ export function renderMarkdown(md) {
     return key;
   });
 
-  // Mermaid — תרשימי זרימה/עצים; mermaid.js בחלון ה-PDF מרנדר את התוכן
-  md = md.replace(/```mermaid\s*([\s\S]+?)```/gi, (_, code) => {
-    const key = `\x00MATH${mathIdx++}\x00`;
-    mathMap[key] = `<pre class="mermaid">${escapeHtml(code.trim())}</pre>`;
-    return key;
-  });
-
   md = md.replace(/\$\$([\s\S]+?)\$\$/g, (_, math) => {
     const key = `\x00MATH${mathIdx++}\x00`;
     mathMap[key] = `<div class="math-block">${renderKatex(math, true)}</div>`;
@@ -81,6 +74,38 @@ export function renderMarkdown(md) {
   md = md.replace(/\$([^$\n]+?)\$/g, (_, math) => {
     const key = `\x00MATH${mathIdx++}\x00`;
     mathMap[key] = `<span class="math-inline">${renderKatex(math, false)}</span>`;
+    return key;
+  });
+
+  // Flow — רצף שלבים/החלטה. רכיב CSS בשליטתנו המלאה: תמיד מתרנדר, תומך עברית
+  // ונוסחאות (placeholders של מתמטיקה כבר קיימים בשלב זה ומשוחזרים מיד).
+  const buildFlow = (lines) => {
+    const steps = lines
+      .map(l => l.trim())
+      .filter(Boolean)
+      .map(l => {
+        let s = inline(escapeHtml(l)).replace(/\x00MATH\d+\x00/g, m => mathMap[m] ?? m);
+        return `<div class="flow-step">${s}</div>`;
+      })
+      .join('');
+    return steps ? `<div class="flow">${steps}</div>` : '';
+  };
+  // בלוק flow מפורש — שורה = שלב
+  md = md.replace(/```flow\s*([\s\S]+?)```/gi, (_, body) => {
+    const key = `\x00MATH${mathIdx++}\x00`;
+    mathMap[key] = buildFlow(body.split('\n'));
+    return key;
+  });
+  // נפילה רכה ל-mermaid ישן (תשובות שמורות): חלץ תוויות והצג כשלבים, לא תיבה שחורה
+  md = md.replace(/```mermaid\s*([\s\S]+?)```/gi, (_, code) => {
+    const key = `\x00MATH${mathIdx++}\x00`;
+    const labels = [];
+    code.replace(/[[{("']\s*([^[\]{}()"'|]+?)\s*[\]})"']/g, (_, t) => {
+      const c = t.replace(/\\n/g, ' ').trim();
+      if (c && c.length > 1 && !labels.includes(c)) labels.push(c);
+      return '';
+    });
+    mathMap[key] = buildFlow(labels);
     return key;
   });
 

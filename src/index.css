@@ -5939,6 +5939,25 @@ select:focus-visible {
   border-radius: 8px; padding: 12px; margin: 10px 0; direction: ltr; overflow-x: auto;
 }
 .ai-msg-md .math-inline { direction: ltr; display: inline-block; }
+.ai-msg-md .flow { display: flex; flex-direction: column; align-items: center; margin: 14px 0; }
+.ai-msg-md .flow-step {
+  position: relative; width: 100%; max-width: 460px; text-align: center;
+  background: var(--accent-dim); border: 1px solid rgba(255,101,36,0.3);
+  border-radius: 10px; padding: 10px 14px; font-weight: 600; font-size: 13.5px; color: var(--text);
+}
+.ai-msg-md .flow-step:not(:last-child) { margin-bottom: 26px; }
+.ai-msg-md .flow-step:not(:last-child)::after {
+  content: ''; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+  width: 2px; height: 12px; background: var(--accent);
+}
+.ai-msg-md .flow-step:not(:last-child)::before {
+  content: ''; position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); z-index: 1;
+  width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 7px solid var(--accent);
+}
+.svg-figure { display: flex; justify-content: center; margin: 12px 0; overflow-x: auto; }
+.svg-figure svg { max-width: 100%; height: auto; }
+.chart-figure { position: relative; height: 280px; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin: 12px 0; }
 
 /* ── AI loading screen ── */
 .ai-loading {

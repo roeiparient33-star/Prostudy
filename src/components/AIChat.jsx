@@ -159,11 +159,29 @@ function downloadAsPDF(content, fileName = 'סיכום') {
   .content .katex{font-size:1.1em;color:var(--text);}
   .content .math-block .katex{font-size:1.25em;}
 
-  /* ── ויזואלים: SVG ו-Mermaid ── */
-  .content .svg-figure,.content .mermaid{display:flex;justify-content:center;
+  /* ── ויזואלים: SVG ── */
+  .content .svg-figure{display:flex;justify-content:center;
     background:#fbf9f5;border:1px solid var(--border);border-radius:12px;
     padding:20px;margin:18px 0;overflow-x:auto;}
-  .content .svg-figure svg,.content .mermaid svg{max-width:100%;height:auto;}
+  .content .svg-figure svg{max-width:100%;height:auto;}
+
+  /* ── רצף שלבים / החלטה (flow) ── */
+  .content .flow{display:flex;flex-direction:column;align-items:center;
+    gap:0;margin:20px 0;}
+  .content .flow-step{position:relative;width:100%;max-width:560px;
+    background:linear-gradient(135deg,rgba(255,101,36,.10),rgba(255,101,36,.04));
+    border:1.5px solid rgba(255,101,36,.30);border-radius:12px;
+    padding:13px 18px;text-align:center;font-weight:600;color:var(--text);
+    font-size:14.5px;line-height:1.6;}
+  .content .flow-step:not(:last-child){margin-bottom:34px;}
+  .content .flow-step:not(:last-child)::after{content:'';position:absolute;
+    bottom:-26px;left:50%;transform:translateX(-50%);
+    width:2px;height:16px;background:var(--accent);}
+  .content .flow-step:not(:last-child)::before{content:'';position:absolute;
+    bottom:-28px;left:50%;transform:translateX(-50%);z-index:1;
+    width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
+    border-top:8px solid var(--accent);}
+  .content .flow-step .katex{font-size:1.02em;}
 
   /* ── גרפים: Chart.js ── */
   .content .chart-figure{position:relative;height:330px;
@@ -197,19 +215,11 @@ function downloadAsPDF(content, fileName = 'סיכום') {
 </div>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
 <script type="module">
-  // mermaid ו-Chart.js נטענים רק אם יש בהם צורך בדף — חוסך טעינה מיותרת
-  var hasMermaid = document.querySelector('.mermaid');
+  // Chart.js נטען רק אם יש גרף בדף — חוסך טעינה מיותרת
   var charts = document.querySelectorAll('.chart-figure');
   function finish(){ setTimeout(function(){ window.print(); }, 850); }
   window.addEventListener('load', async function(){
     try { if (window.hljs) hljs.highlightAll(); } catch(e){}
-    if (hasMermaid) {
-      try {
-        var m = await import('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
-        m.default.initialize({ startOnLoad: false, theme: 'neutral' });
-        await m.default.run({ querySelector: '.mermaid' });
-      } catch(e){}
-    }
     if (charts.length) {
       try {
         var mod = await import('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/auto/+esm');
