@@ -138,19 +138,22 @@ Deno.serve(async (req) => {
 
     const base64 = toBase64(new Uint8Array(await fileData.arrayBuffer()));
 
+    // cache ל-שעה: שומר את המסמך ב-cache לאורך מפגש למידה שלם (פערים > 5 דק' בין פעולות),
+    // כך שסיכום→תרגול→פתרון על אותו קובץ נקראים ב-10% מהמחיר.
+    const cacheControl = { type: "ephemeral", ttl: "1h" } as const;
     if (fileType === "image") {
       const ext = filePath.split(".").pop()?.toLowerCase();
       const mime = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
       content.push({
         type: "image",
         source: { type: "base64", media_type: mime, data: base64 },
-        cache_control: { type: "ephemeral" },
+        cache_control: cacheControl,
       });
     } else {
       content.push({
         type: "document",
         source: { type: "base64", media_type: "application/pdf", data: base64 },
-        cache_control: { type: "ephemeral" }, // שאלות המשך על אותו קובץ = 10% מהמחיר
+        cache_control: cacheControl,
       });
     }
   }
@@ -163,7 +166,7 @@ Deno.serve(async (req) => {
   const streamParams: Anthropic.MessageStreamParams = {
     model: route.model,
     max_tokens: route.maxTokens,
-    system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+    system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral", ttl: "1h" } }],
     messages: [...trimmedHistory, { role: "user", content }],
   };
   if (route.think) {

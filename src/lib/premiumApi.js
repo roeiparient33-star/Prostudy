@@ -15,11 +15,36 @@ function classify(file) {
 }
 
 // סיומת לפי סוג ה-MIME (לשם הקובץ ב-Storage)
-function extOf(file) {
-  if (file.type === 'application/pdf') return 'pdf';
-  if (file.type === 'image/png')  return 'png';
-  if (file.type === 'image/webp') return 'webp';
+function extOf(type) {
+  if (type === 'application/pdf') return 'pdf';
+  if (type === 'image/png')  return 'png';
+  if (type === 'image/webp') return 'webp';
   return 'jpg';
+}
+
+// הקטנת תמונה ל-~1568px בקצה הארוך לפני העלאה — חוסך טוקני תמונה (Claude לא צריך
+// רזולוציה גבוהה כדי לקרוא טקסט). PDF ותמונות קטנות עוברים כמו שהם.
+const MAX_IMG_EDGE = 1568;
+async function downscaleImage(file) {
+  if (!IMAGE_TYPES.includes(file.type)) return file;
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const longEdge = Math.max(bitmap.width, bitmap.height);
+    if (longEdge <= MAX_IMG_EDGE) { bitmap.close?.(); return file; }
+    const scale = MAX_IMG_EDGE / longEdge;
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const outType = file.type === 'image/png' ? 'image/png'
+                  : file.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
+    const blob = await new Promise(res => canvas.toBlob(res, outType, 0.9));
+    return blob || file;
+  } catch {
+    return file; // אם משהו נכשל — מעלים את המקור
+  }
 }
 
 // ── העלאת קובץ חדש ─────────────────────────────────────────────
@@ -31,11 +56,13 @@ export async function uploadMaterial(file, courseId = null) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('unauthorized');
 
-  const path = `${user.id}/${crypto.randomUUID()}.${extOf(file)}`;
+  // תמונות גדולות מוקטנות לפני העלאה (חיסכון בטוקני תמונה)
+  const uploadBlob = await downscaleImage(file);
+  const path = `${user.id}/${crypto.randomUUID()}.${extOf(file.type)}`;
 
   const { error: upErr } = await supabase.storage
     .from('materials')
-    .upload(path, file, { contentType: file.type });
+    .upload(path, uploadBlob, { contentType: file.type });
   if (upErr) throw upErr;
 
   const { data: row, error: dbErr } = await supabase.from('uploaded_files').insert({
@@ -44,7 +71,7 @@ export async function uploadMaterial(file, courseId = null) {
     file_name:  file.name,
     storage_path: path,
     file_type:  fileType,
-    size_bytes: file.size,
+    size_bytes: uploadBlob.size ?? file.size,
   }).select().single();
 
   if (dbErr) {
