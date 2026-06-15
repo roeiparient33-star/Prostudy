@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Plus, X, Clock, CalendarDays, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Plus, X, Clock, CalendarDays, ChevronRight, ChevronLeft, GraduationCap, Bell, Check } from 'lucide-react';
 import ModalPortal from '../components/ModalPortal';
 import { useData } from '../contexts/DataContext';
 
@@ -52,8 +52,14 @@ let nextId = Date.now();
 export default function Schedule() {
   const [events,     setEvents]     = useState(loadEvents);
   const [modal,      setModal]      = useState(null);
+  const [detail,     setDetail]     = useState(null); // יום שנפתח לפירוט (מבחנים + משימות)
   const [weekOffset, setWeekOffset] = useState(0);
-  const { courses, tasks } = useData();
+  const { courses, tasks, exams, updateTask } = useData();
+
+  const courseById = useMemo(
+    () => Object.fromEntries(courses.map(c => [c.id, c])),
+    [courses],
+  );
 
   const weekDates  = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
   const todayIdx   = useMemo(() => {
@@ -62,7 +68,7 @@ export default function Schedule() {
   }, []);
   const isThisWeek = weekOffset === 0;
 
-  // Task deadlines per day-of-week index for this week
+  // משימות שצריך להגיש (שלא בוצעו) לכל יום בשבוע
   const tasksByDay = useMemo(() => {
     const map = {};
     weekDates.forEach((date, i) => {
@@ -71,6 +77,16 @@ export default function Schedule() {
     });
     return map;
   }, [tasks, weekDates]);
+
+  // מבחנים לכל יום בשבוע — מופיעים אוטומטית מלוח המבחנים
+  const examsByDay = useMemo(() => {
+    const map = {};
+    weekDates.forEach((date, i) => {
+      const iso = fmtIso(date);
+      map[i] = exams.filter(e => e.date === iso);
+    });
+    return map;
+  }, [exams, weekDates]);
 
   // Current-time line position (only for today column, this week)
   const nowMin = nowMinutes();
@@ -135,24 +151,39 @@ export default function Schedule() {
             {DAYS.map((d, i) => {
               const isToday  = isThisWeek && i === todayIdx;
               const dayTasks = tasksByDay[i] || [];
+              const dayExams = examsByDay[i] || [];
+              const hasItems = dayTasks.length > 0 || dayExams.length > 0;
               return (
                 <div key={i} className={`sch-day-hd${isToday ? ' sch-today' : ''}`}>
                   <span className="sch-day-name">{d}</span>
                   <span className={`sch-day-date${isToday ? ' sch-today-date' : ''}`}>
                     {fmtShort(weekDates[i])}
                   </span>
-                  {/* Task deadline dots */}
-                  {dayTasks.length > 0 && (
-                    <div className="sch-task-dots">
-                      {dayTasks.slice(0, 3).map(t => (
-                        <span
-                          key={t.id}
-                          className="sch-task-dot"
-                          title={t.title}
-                        />
+                  {/* התראות: מבחנים + משימות להגשה — לחיצה פותחת פירוט */}
+                  {hasItems && (
+                    <div className="sch-flags">
+                      {dayExams.map(ex => (
+                        <button
+                          key={ex.id}
+                          className="sch-flag sch-flag-exam"
+                          title={`מבחן: ${ex.title}`}
+                          onClick={() => setDetail(i)}
+                        >
+                          <GraduationCap size={11}/>
+                          <span className="sch-flag-txt">{ex.title}</span>
+                        </button>
                       ))}
-                      {dayTasks.length > 3 && (
-                        <span className="sch-task-dot-more">+{dayTasks.length - 3}</span>
+                      {dayTasks.length > 0 && (
+                        <button
+                          className="sch-flag sch-flag-hw"
+                          title="משימות להגשה"
+                          onClick={() => setDetail(i)}
+                        >
+                          <Bell size={11}/>
+                          <span className="sch-flag-txt">
+                            {dayTasks.length === 1 ? dayTasks[0].title : `${dayTasks.length} להגיש`}
+                          </span>
+                        </button>
                       )}
                     </div>
                   )}
@@ -248,7 +279,97 @@ export default function Schedule() {
           onClose={() => setModal(null)}
         />
       )}
+
+      {detail != null && (
+        <DayDetailModal
+          dayName={DAYS[detail]}
+          date={weekDates[detail]}
+          exams={examsByDay[detail] || []}
+          homework={tasksByDay[detail] || []}
+          courseById={courseById}
+          onComplete={(id) => updateTask(id, { completed: true })}
+          onClose={() => setDetail(null)}
+        />
+      )}
     </div>
+  );
+}
+
+function DayDetailModal({ dayName, date, exams, homework, courseById, onComplete, onClose }) {
+  const dateLabel = date.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+  // אם סיימו את כל המשימות והיום ריק — סגור אוטומטית
+  if (exams.length === 0 && homework.length === 0) {
+    return (
+      <ModalPortal>
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+          <div className="modal-box" style={{ maxWidth: 380 }}>
+            <div className="modal-head">
+              <span className="modal-head-title">{dayName} · {dateLabel}</span>
+              <button className="modal-close-btn" onClick={onClose}><X size={17}/></button>
+            </div>
+            <div className="sch-detail-empty">
+              <Check size={28} color="var(--green)"/>
+              <span>הכל טופל ליום הזה 🎉</span>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+    );
+  }
+  return (
+    <ModalPortal>
+      <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="modal-box" style={{ maxWidth: 420 }}>
+          <div className="modal-head">
+            <span className="modal-head-title">{dayName} · {dateLabel}</span>
+            <button className="modal-close-btn" onClick={onClose}><X size={17}/></button>
+          </div>
+
+          <div className="sch-detail-body">
+            {exams.length > 0 && (
+              <div className="sch-detail-sec">
+                <div className="sch-detail-sec-title"><GraduationCap size={14}/> מבחנים</div>
+                {exams.map(ex => {
+                  const c = courseById[ex.courseId];
+                  return (
+                    <div key={ex.id} className="sch-detail-row sch-detail-exam">
+                      <span className="sch-detail-bar" style={{ background: c?.color || 'var(--red)' }}/>
+                      <div className="sch-detail-info">
+                        <div className="sch-detail-title">{ex.title}</div>
+                        <div className="sch-detail-meta">
+                          {c ? c.name : 'מבחן'}{ex.location ? ` · ${ex.location}` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {homework.length > 0 && (
+              <div className="sch-detail-sec">
+                <div className="sch-detail-sec-title"><Bell size={14}/> להגשה היום</div>
+                {homework.map(t => {
+                  const c = courseById[t.courseId];
+                  return (
+                    <div key={t.id} className="sch-detail-row">
+                      <span className="sch-detail-bar" style={{ background: c?.color || 'var(--accent)' }}/>
+                      <div className="sch-detail-info">
+                        <div className="sch-detail-title">{t.title}</div>
+                        <div className="sch-detail-meta">{c ? c.name : 'משימה'}</div>
+                      </div>
+                      <button className="sch-detail-done" onClick={() => onComplete(t.id)} title="סמן כהוגש">
+                        <Check size={14}/> הוגש
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </ModalPortal>
   );
 }
 

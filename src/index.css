@@ -1932,27 +1932,50 @@ select:focus-visible {
 .sch-day-hd.sch-today .sch-day-name { color: var(--accent); }
 .sch-today-date { color: var(--accent) !important; font-weight: 700 !important; }
 
-/* Task deadline dots in header */
-.sch-task-dots {
-  display: flex;
-  gap: 3px;
-  align-items: center;
-  margin-top: 3px;
-  flex-wrap: wrap;
-  justify-content: center;
+/* התראות בכותרת היום — מבחנים + משימות (לחיצות) */
+.sch-flags {
+  display: flex; flex-direction: column; gap: 3px;
+  width: 100%; margin-top: 4px;
 }
-.sch-task-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--red);
-  display: block;
-  flex-shrink: 0;
+.sch-flag {
+  display: flex; align-items: center; gap: 4px;
+  width: 100%; cursor: pointer; border: none;
+  border-radius: 6px; padding: 3px 6px;
+  font-family: var(--font); font-size: 10px; font-weight: 700;
+  transition: filter var(--transition);
 }
-.sch-task-dot-more {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--red);
+.sch-flag:hover { filter: brightness(0.95); }
+.sch-flag svg { flex-shrink: 0; }
+.sch-flag-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sch-flag-exam { background: var(--red-dim); color: var(--red); }
+.sch-flag-hw   { background: var(--accent-dim); color: var(--accent-dark); }
+
+/* מודל פירוט יום */
+.sch-detail-body { padding: 6px 4px 4px; display: flex; flex-direction: column; gap: 16px; }
+.sch-detail-sec-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 800; color: var(--text-2);
+  margin-bottom: 8px;
+}
+.sch-detail-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-main); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 6px;
+}
+.sch-detail-bar { width: 4px; align-self: stretch; border-radius: 99px; flex-shrink: 0; }
+.sch-detail-info { flex: 1; min-width: 0; }
+.sch-detail-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.sch-detail-meta { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.sch-detail-done {
+  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+  background: var(--green); color: #fff; border: none; border-radius: 99px;
+  font-family: var(--font); font-size: 12px; font-weight: 700;
+  padding: 6px 12px; cursor: pointer; transition: filter var(--transition);
+}
+.sch-detail-done:hover { filter: brightness(1.08); }
+.sch-detail-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 28px 0; font-size: 14px; font-weight: 600; color: var(--text-2);
 }
 
 /* Today column highlight */
