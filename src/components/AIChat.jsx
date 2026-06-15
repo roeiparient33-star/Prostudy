@@ -218,7 +218,7 @@ function downloadAsPDF(content, fileName = 'סיכום') {
   <div class="content">
     ${html}
   </div>
-  <div class="footer">נוצר באמצעות ProStudy AI · ${dateStr}</div>
+  <div class="footer">נוצר באמצעות ProStudy AI</div>
 </div>
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
 <script type="module">
