@@ -124,7 +124,7 @@ export default function Schedule() {
 
       {/* Week navigation */}
       <div className="sch-week-nav">
-        <button className="sch-week-btn" onClick={() => setWeekOffset(o => o + 1)} aria-label="שבוע הבא">
+        <button className="sch-week-btn" onClick={() => setWeekOffset(o => o - 1)} aria-label="שבוע קודם">
           <ChevronRight size={16}/>
         </button>
         <div className="sch-week-label">
@@ -138,7 +138,7 @@ export default function Schedule() {
             השבוע
           </button>
         )}
-        <button className="sch-week-btn" onClick={() => setWeekOffset(o => o - 1)} aria-label="שבוע קודם">
+        <button className="sch-week-btn" onClick={() => setWeekOffset(o => o + 1)} aria-label="שבוע הבא">
           <ChevronLeft size={16}/>
         </button>
       </div>
