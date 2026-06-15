@@ -46,8 +46,8 @@ function AILoading() {
   );
 }
 
-// פותח חלון הדפסה עם תבנית מעוצבת — משם המשתמש שומר כ-PDF.
-// כל העיצוב (צביעת תחביר, כותרות ממוספרות, תיבות מידע) נעשה בצד הדפדפן — אפס טוקנים.
+// פותח לשונית עם תבנית מעוצבת (בהירה) — המשתמש שומר כ-PDF דרך כפתור.
+// כל העיצוב (צביעת תחביר, כותרות ממוספרות, נוסחאות) נעשה בצד הדפדפן — אפס טוקנים.
 function downloadAsPDF(content, fileName = 'סיכום') {
   const html = renderMarkdown(content);
   const dateStr = new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -60,12 +60,12 @@ function downloadAsPDF(content, fileName = 'סיכום') {
 <title>${fileName} — ProStudy</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css"/>
 <style>
   :root{
-    --bg:#1a1714; --card:#242019; --code:#0f0d0b; --border:#3a342c;
-    --accent:#FF6524; --accent-2:#ff8a5c;
-    --text:#f0ebe3; --muted:#b8b0a4; --dim:#8a8175;
+    --bg:#ffffff; --text:#1e293b; --muted:#475569; --dim:#64748b;
+    --accent:#2563eb; --accent-dark:#1d4ed8; --accent-soft:rgba(37,99,235,.08);
+    --border:#e2e8f0; --code-bg:#f1f5f9;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);
@@ -73,39 +73,49 @@ function downloadAsPDF(content, fileName = 'סיכום') {
        -webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .page{max-width:860px;margin:0 auto;padding:0 36px 60px;}
 
+  /* ── סרגל פעולה (לא מודפס) ── */
+  .toolbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;
+    justify-content:space-between;gap:12px;background:#f8fafc;border-bottom:1px solid var(--border);
+    padding:12px 24px;margin-bottom:8px;}
+  .toolbar-hint{font-size:13px;color:var(--muted);}
+  .toolbar-btn{display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+    background:var(--accent);color:#fff;border:none;border-radius:10px;
+    font-family:'Heebo',sans-serif;font-size:14px;font-weight:800;padding:9px 20px;}
+  .toolbar-btn:hover{background:var(--accent-dark);}
+  @media print{ .toolbar{display:none !important;} }
+
   /* ── שער ── */
-  .cover{padding:48px 0 32px;margin-bottom:36px;border-bottom:1px solid var(--border);
-         position:relative;}
+  .cover{padding:40px 0 26px;margin-bottom:30px;border-bottom:2px solid var(--accent);}
   .cover-badge{display:inline-flex;align-items:center;gap:7px;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+    background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;
     font-size:12px;font-weight:800;letter-spacing:.5px;
     padding:6px 16px;border-radius:99px;margin-bottom:18px;}
-  .cover h1{font-size:38px;font-weight:900;letter-spacing:-1px;line-height:1.15;
-            color:#fff;margin-bottom:10px;}
+  .cover h1{font-size:36px;font-weight:900;letter-spacing:-1px;line-height:1.15;
+            color:var(--text);margin-bottom:10px;}
   .cover .date{font-size:14px;color:var(--dim);font-weight:500;}
 
   .content{counter-reset:section;}
 
   /* ── כותרות ── */
-  .content h1{font-size:26px;font-weight:900;color:#fff;margin:34px 0 14px;
+  .content h1{font-size:25px;font-weight:900;color:var(--text);margin:32px 0 14px;
               letter-spacing:-.5px;line-height:1.25;}
-  .content h2{font-size:21px;font-weight:800;color:#fff;
-              margin:36px 0 16px;padding-bottom:10px;
+  .content h2{font-size:21px;font-weight:800;color:var(--text);
+              margin:34px 0 16px;padding-bottom:10px;
               border-bottom:2px solid var(--accent);
               display:flex;align-items:center;gap:14px;counter-increment:section;}
   .content h2::before{content:counter(section);flex-shrink:0;
     width:38px;height:38px;border-radius:11px;
-    background:linear-gradient(135deg,var(--accent),#e5531a);color:#fff;
+    background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;
     display:inline-flex;align-items:center;justify-content:center;
     font-size:17px;font-weight:900;}
-  .content h3{font-size:17px;font-weight:800;color:var(--accent-2);margin:24px 0 8px;}
+  .content h3{font-size:17px;font-weight:800;color:var(--accent-dark);margin:24px 0 8px;}
   .content h4{font-size:15px;font-weight:700;color:var(--muted);margin:16px 0 6px;}
 
   /* ── טקסט ── */
   .content p{margin:0 0 12px;color:var(--text);}
-  .content strong{color:var(--accent-2);font-weight:800;}
+  .content strong{color:var(--accent-dark);font-weight:800;}
   .content em{color:var(--muted);font-style:italic;}
-  .content a{color:#82aaff;text-decoration:underline;}
+  .content a{color:var(--accent);text-decoration:underline;}
 
   /* ── רשימות ── */
   .content ul,.content ol{margin:10px 0 16px;padding:0;list-style:none;}
@@ -114,39 +124,39 @@ function downloadAsPDF(content, fileName = 'סיכום') {
     width:8px;height:8px;border-radius:50%;background:var(--accent);}
   .content ol{counter-reset:ol;}
   .content ol li{position:relative;padding-inline-start:32px;margin:8px 0;counter-increment:ol;}
-  .content ol li::before{content:counter(ol);position:absolute;inset-inline-start:0;top:0;
-    width:22px;height:22px;border-radius:6px;background:rgba(255,101,36,.15);
-    color:var(--accent);font-size:12px;font-weight:800;
+  .content ol li::before{content:counter(ol);position:absolute;inset-inline-start:0;top:1px;
+    width:23px;height:23px;border-radius:7px;background:var(--accent-soft);
+    color:var(--accent-dark);font-size:12px;font-weight:800;
     display:inline-flex;align-items:center;justify-content:center;}
 
   /* ── קוד inline ── */
-  .content code{background:rgba(255,101,36,.12);color:var(--accent-2);
-    border:1px solid rgba(255,101,36,.22);border-radius:5px;padding:2px 7px;
+  .content code{background:var(--accent-soft);color:var(--accent-dark);
+    border:1px solid rgba(37,99,235,.20);border-radius:5px;padding:2px 7px;
     font-family:'Fira Code',monospace;font-size:.84em;direction:ltr;
     display:inline-block;line-height:1.4;}
 
   /* ── בלוק קוד ── */
-  .content pre{background:var(--code);border:1px solid #2a241d;border-radius:12px;
+  .content pre{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;
     padding:18px 20px;overflow-x:auto;margin:16px 0;direction:ltr;text-align:left;
     font-size:13px;line-height:1.9;}
-  .content pre code{background:none;border:none;padding:0;color:#cdd5e0;
+  .content pre code{background:none;border:none;padding:0;
     font-family:'Fira Code',monospace;direction:ltr;display:block;font-size:13px;}
   /* הערות עברית בתוך קוד — בידוד כיווניות כדי שלא יישברו */
   .content pre .hljs-comment{unicode-bidi:isolate;}
 
   /* ── טבלאות ── */
   .content table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;
-    background:var(--card);border-radius:10px;overflow:hidden;}
-  .content th{background:rgba(255,101,36,.18);color:var(--accent-2);
+    border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .content th{background:var(--accent-soft);color:var(--accent-dark);
     text-align:right;font-weight:800;font-size:13px;padding:11px 15px;
     border-bottom:2px solid var(--accent);}
   .content td{padding:10px 15px;border-bottom:1px solid var(--border);
     color:var(--text);vertical-align:top;}
   .content tr:last-child td{border-bottom:none;}
-  .content tr:nth-child(even) td{background:rgba(255,255,255,.025);}
+  .content tr:nth-child(even) td{background:#f8fafc;}
 
   /* ── ציטוט / תיבת מידע ── */
-  .content blockquote{background:rgba(255,101,36,.08);
+  .content blockquote{background:var(--accent-soft);
     border-inline-start:4px solid var(--accent);
     padding:13px 18px;margin:14px 0;border-radius:0 10px 10px 0;color:var(--muted);}
 
@@ -154,14 +164,14 @@ function downloadAsPDF(content, fileName = 'סיכום') {
 
   /* ── מתמטיקה ── */
   .content .math-block{display:flex;justify-content:center;
-    background:rgba(255,101,36,.06);border:1px solid rgba(255,101,36,.16);
+    background:#f8fafc;border:1px solid var(--border);
     border-radius:10px;padding:18px;margin:16px 0;overflow-x:auto;direction:ltr;}
   .content .katex{font-size:1.1em;color:var(--text);}
   .content .math-block .katex{font-size:1.25em;}
 
   /* ── ויזואלים: SVG ── */
   .content .svg-figure{display:flex;justify-content:center;
-    background:#fbf9f5;border:1px solid var(--border);border-radius:12px;
+    background:#f8fafc;border:1px solid var(--border);border-radius:12px;
     padding:20px;margin:18px 0;overflow-x:auto;}
   .content .svg-figure svg{max-width:100%;height:auto;}
 
@@ -169,8 +179,8 @@ function downloadAsPDF(content, fileName = 'סיכום') {
   .content .flow{display:flex;flex-direction:column;align-items:center;
     gap:0;margin:20px 0;}
   .content .flow-step{position:relative;width:100%;max-width:560px;
-    background:linear-gradient(135deg,rgba(255,101,36,.10),rgba(255,101,36,.04));
-    border:1.5px solid rgba(255,101,36,.30);border-radius:12px;
+    background:var(--accent-soft);
+    border:1.5px solid rgba(37,99,235,.28);border-radius:12px;
     padding:13px 18px;text-align:center;font-weight:600;color:var(--text);
     font-size:14.5px;line-height:1.6;}
   .content .flow-step:not(:last-child){margin-bottom:34px;}
@@ -192,16 +202,13 @@ function downloadAsPDF(content, fileName = 'סיכום') {
   /* ── כותרת תחתונה ── */
   .footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);
     text-align:center;color:var(--dim);font-size:12px;font-weight:500;}
-
-  @media print{
-    body{background:var(--bg);}
-    .content pre,.content table,.content blockquote,.content h2::before,
-    .cover-badge,.content ol li::before{
-      -webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  }
 </style>
 </head>
 <body>
+<div class="toolbar">
+  <span class="toolbar-hint">לחץ "שמור כ-PDF" ובחר "Save as PDF" ביעד ההדפסה</span>
+  <button class="toolbar-btn" onclick="window.print()">⬇ שמור כ-PDF</button>
+</div>
 <div class="page">
   <div class="cover">
     <div class="cover-badge">✦ ProStudy · העוזר הלימודי</div>
@@ -217,7 +224,6 @@ function downloadAsPDF(content, fileName = 'סיכום') {
 <script type="module">
   // Chart.js נטען רק אם יש גרף בדף — חוסך טעינה מיותרת
   var charts = document.querySelectorAll('.chart-figure');
-  function finish(){ setTimeout(function(){ window.print(); }, 850); }
   window.addEventListener('load', async function(){
     try { if (window.hljs) hljs.highlightAll(); } catch(e){}
     if (charts.length) {
@@ -226,7 +232,7 @@ function downloadAsPDF(content, fileName = 'סיכום') {
         var Chart = mod.default;
         Chart.defaults.font.family = 'Heebo, sans-serif';
         Chart.defaults.animation = false;
-        var palette = ['#FF6524','#3b82f6','#10b981','#f59e0b','#a855f7','#ef4444'];
+        var palette = ['#2563eb','#10b981','#f59e0b','#a855f7','#ef4444','#0ea5e9'];
         charts.forEach(function(el){
           try {
             var raw = JSON.parse(el.getAttribute('data-chart'));
@@ -246,23 +252,23 @@ function downloadAsPDF(content, fileName = 'סיכום') {
             var s  = o.scales || {};
             var xt = (s.x && s.x.title) || {};
             var yt = (s.y && s.y.title) || {};
-            var muted = '#9a9185', soft = '#7a7165';
+            var muted = '#94a3b8', soft = '#64748b';
             var clean = {
               responsive: true, maintainAspectRatio: false,
               layout: { padding: 18 },
               plugins: {
                 legend: { display: multi, position: 'bottom',
                   labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8,
-                    padding: 18, font: { size: 12, family: 'Heebo' }, color: '#5a5044' } },
-                title: { display: !!t.text, text: t.text || '', color: '#2a251f',
+                    padding: 18, font: { size: 12, family: 'Heebo' }, color: '#475569' } },
+                title: { display: !!t.text, text: t.text || '', color: '#1e293b',
                   font: { size: 16, weight: '800', family: 'Heebo' }, padding: { bottom: 18 } },
                 tooltip: { enabled: false }
               },
               scales: {
-                x: { grid: { display: false }, border: { color: '#ddd5c9' },
+                x: { grid: { display: false }, border: { color: '#cbd5e1' },
                   ticks: { color: muted, font: { size: 11, family: 'Heebo' } },
                   title: { display: !!xt.text, text: xt.text || '', color: soft, font: { size: 12, family: 'Heebo' } } },
-                y: { grid: { color: '#f0ece4' }, border: { display: false },
+                y: { grid: { color: '#eef2f7' }, border: { display: false },
                   ticks: { color: muted, font: { size: 11, family: 'Heebo' } },
                   title: { display: !!yt.text, text: yt.text || '', color: soft, font: { size: 12, family: 'Heebo' } } }
               }
@@ -272,7 +278,6 @@ function downloadAsPDF(content, fileName = 'סיכום') {
         });
       } catch(e){}
     }
-    finish();
   });
 </script>
 </body>

@@ -1,4 +1,4 @@
-import{b as u0,j as w,a as t1,s as Me}from"./index-B30rgwGB.js";import{r as K,a as Pe,a6 as He,a7 as r1,p as Jr,a8 as a1,g as n1,a9 as i1,aa as s1,ab as l1,D as Qr,ac as _r,X as o1,ad as u1,ae as c1,Z as h1,n as m1}from"./vendor-lucide-B7DPb50e.js";import"./vendor-react-BJE64UaW.js";import"./vendor-supabase-CVkrZrL3.js";const gt=25,ea=["image/jpeg","image/png","image/webp"];function d1(r){return r.type==="application/pdf"?"pdf":ea.includes(r.type)?"image":null}function f1(r){return r==="application/pdf"?"pdf":r==="image/png"?"png":r==="image/webp"?"webp":"jpg"}const lr=1568;async function p1(r){var e,t;if(!ea.includes(r.type))return r;try{const a=await createImageBitmap(r,{imageOrientation:"from-image"}),n=Math.max(a.width,a.height);if(n<=lr)return(e=a.close)==null||e.call(a),r;const s=lr/n,o=Math.round(a.width*s),c=Math.round(a.height*s),h=document.createElement("canvas");h.width=o,h.height=c,h.getContext("2d").drawImage(a,0,0,o,c),(t=a.close)==null||t.call(a);const d=r.type==="image/png"?"image/png":r.type==="image/webp"?"image/webp":"image/jpeg";return await new Promise(g=>h.toBlob(g,d,.9))||r}catch{return r}}async function v1(r,e=null){const t=d1(r);if(!t)throw new Error("unsupported_type");if(r.size>gt*1024*1024)throw new Error("file_too_large");const{data:{user:a}}=await u0.auth.getUser();if(!a)throw new Error("unauthorized");const n=await p1(r),s=`${a.id}/${crypto.randomUUID()}.${f1(r.type)}`,{error:o}=await u0.storage.from("materials").upload(s,n,{contentType:r.type});if(o)throw o;const{data:c,error:h}=await u0.from("uploaded_files").insert({user_id:a.id,course_id:e||null,file_name:r.name,storage_path:s,file_type:t,size_bytes:n.size??r.size}).select().single();if(h)throw await u0.storage.from("materials").remove([s]),h;return c}async function g1(){const{data:r}=await u0.from("uploaded_files").select("*").order("created_at",{ascending:!1});return r||[]}async function b1(r){await u0.storage.from("materials").remove([r.storage_path]),await u0.from("uploaded_files").delete().eq("id",r.id)}async function y1(){const{data:r}=await u0.from("subscriptions").select("status, plan, current_period_end").maybeSingle();return r}function x1(r){return!!r&&r.status==="active"&&r.current_period_end&&new Date(r.current_period_end)>new Date}async function w1(){const r=new Date;r.setHours(0,0,0,0);const{count:e}=await u0.from("ai_usage").select("*",{count:"exact",head:!0}).gte("created_at",r.toISOString());return e||0}const or={premium:30,pro:100};async function k1(r,e){const{data:{user:t}}=await u0.auth.getUser(),{data:a}=await u0.from("ai_conversations").insert({user_id:t.id,file_id:r||null,title:e||"שיחה חדשה"}).select().single();return a}async function ur(r,e,t,a=null){const n={conversation_id:r,role:e,content:t},{error:s}=await u0.from("ai_messages").insert(a?{...n,kind:a}:n);s&&a&&await u0.from("ai_messages").insert(n)}async function S1(){const{data:r}=await u0.from("ai_conversations").select("id, title, created_at, file_id").order("created_at",{ascending:!1}).limit(50);return r||[]}async function z1(r){const{data:e}=await u0.from("ai_messages").select("*").eq("conversation_id",r).order("created_at");return(e||[]).map(t=>({role:t.role,content:t.content,kind:t.kind??null}))}async function M1(r){await u0.from("ai_conversations").delete().eq("id",r)}async function A1({action:r,question:e,filePath:t,fileType:a,history:n,onChunk:s}){const{data:{session:o}}=await u0.auth.getSession();if(!o)throw new Error("unauthorized");const c=await fetch("https://ymodgzacgzncrwmeqqle.supabase.co/functions/v1/ai-assistant",{method:"POST",headers:{Authorization:`Bearer ${o.access_token}`,"Content-Type":"application/json"},body:JSON.stringify({action:r,question:e,filePath:t,fileType:a,history:n})});if(c.status===403)throw new Error("premium_required");if(c.status===429)throw new Error("daily_limit_reached");if(!c.ok||!c.body)throw new Error("ai_error");const h=c.body.getReader(),d=new TextDecoder;let f="",g="",x=null;for(;;){const{done:y,value:k}=await h.read();if(y)break;f+=d.decode(k,{stream:!0});const z=f.split(`
+import{b as u0,j as w,a as t1,s as Me}from"./index-Ctkql-Dh.js";import{r as K,a as Pe,a6 as He,a7 as r1,p as Jr,a8 as a1,g as n1,a9 as i1,aa as s1,ab as l1,D as Qr,ac as _r,X as o1,ad as u1,ae as c1,Z as h1,n as m1}from"./vendor-lucide-B7DPb50e.js";import"./vendor-react-BJE64UaW.js";import"./vendor-supabase-CVkrZrL3.js";const gt=25,ea=["image/jpeg","image/png","image/webp"];function d1(r){return r.type==="application/pdf"?"pdf":ea.includes(r.type)?"image":null}function f1(r){return r==="application/pdf"?"pdf":r==="image/png"?"png":r==="image/webp"?"webp":"jpg"}const lr=1568;async function p1(r){var e,t;if(!ea.includes(r.type))return r;try{const a=await createImageBitmap(r,{imageOrientation:"from-image"}),n=Math.max(a.width,a.height);if(n<=lr)return(e=a.close)==null||e.call(a),r;const s=lr/n,o=Math.round(a.width*s),c=Math.round(a.height*s),h=document.createElement("canvas");h.width=o,h.height=c,h.getContext("2d").drawImage(a,0,0,o,c),(t=a.close)==null||t.call(a);const d=r.type==="image/png"?"image/png":r.type==="image/webp"?"image/webp":"image/jpeg";return await new Promise(g=>h.toBlob(g,d,.9))||r}catch{return r}}async function v1(r,e=null){const t=d1(r);if(!t)throw new Error("unsupported_type");if(r.size>gt*1024*1024)throw new Error("file_too_large");const{data:{user:a}}=await u0.auth.getUser();if(!a)throw new Error("unauthorized");const n=await p1(r),s=`${a.id}/${crypto.randomUUID()}.${f1(r.type)}`,{error:o}=await u0.storage.from("materials").upload(s,n,{contentType:r.type});if(o)throw o;const{data:c,error:h}=await u0.from("uploaded_files").insert({user_id:a.id,course_id:e||null,file_name:r.name,storage_path:s,file_type:t,size_bytes:n.size??r.size}).select().single();if(h)throw await u0.storage.from("materials").remove([s]),h;return c}async function g1(){const{data:r}=await u0.from("uploaded_files").select("*").order("created_at",{ascending:!1});return r||[]}async function b1(r){await u0.storage.from("materials").remove([r.storage_path]),await u0.from("uploaded_files").delete().eq("id",r.id)}async function y1(){const{data:r}=await u0.from("subscriptions").select("status, plan, current_period_end").maybeSingle();return r}function x1(r){return!!r&&r.status==="active"&&r.current_period_end&&new Date(r.current_period_end)>new Date}async function w1(){const r=new Date;r.setHours(0,0,0,0);const{count:e}=await u0.from("ai_usage").select("*",{count:"exact",head:!0}).gte("created_at",r.toISOString());return e||0}const or={premium:30,pro:100};async function k1(r,e){const{data:{user:t}}=await u0.auth.getUser(),{data:a}=await u0.from("ai_conversations").insert({user_id:t.id,file_id:r||null,title:e||"שיחה חדשה"}).select().single();return a}async function ur(r,e,t,a=null){const n={conversation_id:r,role:e,content:t},{error:s}=await u0.from("ai_messages").insert(a?{...n,kind:a}:n);s&&a&&await u0.from("ai_messages").insert(n)}async function S1(){const{data:r}=await u0.from("ai_conversations").select("id, title, created_at, file_id").order("created_at",{ascending:!1}).limit(50);return r||[]}async function z1(r){const{data:e}=await u0.from("ai_messages").select("*").eq("conversation_id",r).order("created_at");return(e||[]).map(t=>({role:t.role,content:t.content,kind:t.kind??null}))}async function M1(r){await u0.from("ai_conversations").delete().eq("id",r)}async function A1({action:r,question:e,filePath:t,fileType:a,history:n,onChunk:s}){const{data:{session:o}}=await u0.auth.getSession();if(!o)throw new Error("unauthorized");const c=await fetch("https://ymodgzacgzncrwmeqqle.supabase.co/functions/v1/ai-assistant",{method:"POST",headers:{Authorization:`Bearer ${o.access_token}`,"Content-Type":"application/json"},body:JSON.stringify({action:r,question:e,filePath:t,fileType:a,history:n})});if(c.status===403)throw new Error("premium_required");if(c.status===429)throw new Error("daily_limit_reached");if(!c.ok||!c.body)throw new Error("ai_error");const h=c.body.getReader(),d=new TextDecoder;let f="",g="",x=null;for(;;){const{done:y,value:k}=await h.read();if(y)break;f+=d.decode(k,{stream:!0});const z=f.split(`
 
 `);f=z.pop()||"";for(const C of z){const B=C.trim();if(!B.startsWith("data:"))continue;const E=JSON.parse(B.slice(5).trim());if(E.text&&(g+=E.text,s==null||s(g)),E.error)throw new Error(E.error);E.done&&typeof E.remaining=="number"&&(x=E.remaining)}}return{text:g,remaining:x}}function T1(){const[r,e]=K.useState(null),[t,a]=K.useState(0),[n,s]=K.useState(!0),o=K.useCallback(async()=>{const[f,g]=await Promise.all([y1(),w1()]);e(f),a(g),s(!1)},[]);K.useEffect(()=>{o()},[o]);const c=x1(r),h=(r==null?void 0:r.plan)||"premium",d=or[h]??or.premium;return{loading:n,isPremium:c,plan:h,used:t,limit:d,remaining:Math.max(0,d-t),bumpUsed:f=>a(g=>f!=null?d-f:g+1),refresh:o}}const C1=[{icon:He,text:"העלאת מטלות, מבחנים וסיכומים — והפיכתם לחומר לימוד"},{icon:r1,text:"שאלות על החומר שלך, עם תשובות שמסבירות — לא רק עונות"},{icon:Jr,text:"פתרון תרגילים שלב-אחרי-שלב, כדי שתבין באמת"},{icon:a1,text:"צילום דף תרגיל → הסבר מלא תוך שניות"}],D1=[{id:"premium",name:"בסיסי",price:"₪25",per:"/חודש",perks:["30 פעולות AI ביום","סיכומים ושאלות על החומר","פתרון תרגילים"]},{id:"pro",name:"פרו",price:"₪40",per:"/חודש",best:!0,perks:["100 פעולות AI ביום","הכל מהבסיסי","מודל מתקדם לפתרון תרגילים מורכבים","עדיפות בזמני עומס"]}];function B1({onUpgrade:r}){return w.jsxs("div",{className:"page-enter premium-gate",children:[w.jsxs("div",{className:"premium-gate-hero",children:[w.jsxs("div",{className:"premium-gate-badge",children:[w.jsx(Pe,{size:15})," ProStudy Premium"]}),w.jsx("h1",{children:"מורה פרטי AI שמכיר את החומר שלך"}),w.jsx("p",{children:"העלה את ההרצאות, המטלות והמבחנים — וקבל הסברים, סיכומים ופתרונות מותאמים בדיוק למה שאתה לומד."})]}),w.jsx("div",{className:"premium-gate-features",children:C1.map(({icon:e,text:t},a)=>w.jsxs("div",{className:"premium-feature",children:[w.jsx("div",{className:"premium-feature-icon",children:w.jsx(e,{size:20})}),w.jsx("span",{children:t})]},a))}),w.jsx("div",{className:"premium-plans",children:D1.map(e=>w.jsxs("div",{className:`premium-plan${e.best?" best":""}`,children:[e.best&&w.jsx("div",{className:"premium-plan-tag",children:"הכי משתלם"}),w.jsx("div",{className:"premium-plan-name",children:e.name}),w.jsxs("div",{className:"premium-plan-price",children:[e.price,w.jsx("span",{children:e.per})]}),w.jsx("ul",{className:"premium-plan-perks",children:e.perks.map((t,a)=>w.jsxs("li",{children:[w.jsx(n1,{size:15})," ",t]},a))}),w.jsxs("button",{className:`premium-plan-btn${e.best?" best":""}`,onClick:()=>r==null?void 0:r(e.id),children:["שדרג ל",e.name]})]},e.id))}),w.jsx("p",{className:"premium-gate-note",children:"ביטול בכל עת · ללא התחייבות · החיוב מאובטח"})]})}function q1(r){return r<1024*1024?`${Math.max(1,Math.round(r/1024))} KB`:`${(r/1024/1024).toFixed(1)} MB`}async function N1(r,e){r.stopPropagation();const{data:t}=await u0.storage.from("materials").createSignedUrl(e.storage_path,60);if(t!=null&&t.signedUrl){const a=document.createElement("a");a.href=t.signedUrl,a.download=e.file_name,document.body.appendChild(a),a.click(),document.body.removeChild(a)}}function E1({files:r,activeFileId:e,onSelect:t,onUpload:a,onDelete:n,courses:s=[]}){const o=K.useRef(null),[c,h]=K.useState(!1),[d,f]=K.useState(""),[g,x]=K.useState("");async function y(k){const z=k==null?void 0:k[0];if(z){x(""),h(!0);try{await a(z,d||null)}catch(C){const B={unsupported_type:"סוג הקובץ לא נתמך — אפשר PDF או תמונה",file_too_large:`הקובץ גדול מדי — עד ${gt}MB`};x(B[C.message]||"ההעלאה נכשלה, נסה שוב")}finally{h(!1),o.current&&(o.current.value="")}}}return w.jsxs("div",{className:"materials-lib",children:[w.jsxs("div",{className:"materials-head",children:[w.jsx("h3",{children:"החומרים שלי"}),s.length>0&&w.jsxs("select",{className:"materials-course-select",value:d,onChange:k=>f(k.target.value),children:[w.jsx("option",{value:"",children:"ללא קורס"}),s.map(k=>w.jsxs("option",{value:k.id,children:[k.emoji," ",k.name]},k.id))]})]}),w.jsxs("div",{className:`materials-drop${c?" busy":""}`,onClick:()=>{var k;return!c&&((k=o.current)==null?void 0:k.click())},onDragOver:k=>k.preventDefault(),onDrop:k=>{k.preventDefault(),c||y(k.dataTransfer.files)},children:[c?w.jsxs(w.Fragment,{children:[w.jsx(i1,{size:20,className:"spin"})," מעלה..."]}):w.jsxs(w.Fragment,{children:[w.jsx(s1,{size:20})," גרור קובץ או לחץ להעלאה",w.jsxs("small",{children:["PDF או תמונה · עד ",gt,"MB"]})]}),w.jsx("input",{ref:o,type:"file",hidden:!0,accept:"application/pdf,image/jpeg,image/png,image/webp",onChange:k=>y(k.target.files)})]}),g&&w.jsx("div",{className:"materials-error",children:g}),w.jsxs("div",{className:"materials-list",children:[r.length===0&&!c&&w.jsx("div",{className:"materials-empty",children:"עוד לא העלית חומרים"}),r.map(k=>{const z=k.file_type==="image"?l1:He;return w.jsxs("div",{className:`material-row${e===k.id?" active":""}`,onClick:()=>t(k),children:[w.jsx(z,{size:18,className:"material-row-icon"}),w.jsxs("div",{className:"material-row-info",children:[w.jsx("div",{className:"material-row-name",children:k.file_name}),w.jsx("div",{className:"material-row-meta",children:q1(k.size_bytes)})]}),w.jsx("button",{className:"material-row-dl",title:"הורד קובץ",onClick:C=>N1(C,k),children:w.jsx(Qr,{size:15})}),w.jsx("button",{className:"material-row-del",title:"מחק",onClick:C=>{C.stopPropagation(),n(k)},children:w.jsx(_r,{size:15})})]},k.id)})]})]})}class A extends Error{constructor(e,t){var a="KaTeX parse error: "+e,n,s,o=t&&t.loc;if(o&&o.start<=o.end){var c=o.lexer.input;n=o.start,s=o.end,n===c.length?a+=" at end of input: ":a+=" at position "+(n+1)+": ";var h=c.slice(n,s).replace(/[^]/g,"$&̲"),d;n>15?d="…"+c.slice(n-15,n):d=c.slice(0,n);var f;s+15<c.length?f=c.slice(s,s+15)+"…":f=c.slice(s),a+=d+h+f}super(a),this.name="ParseError",this.position=void 0,this.length=void 0,this.rawMessage=void 0,Object.setPrototypeOf(this,A.prototype),this.position=n,n!=null&&s!=null&&(this.length=s-n),this.rawMessage=e}}var I1=/([A-Z])/g,R1=r=>r.replace(I1,"-$1").toLowerCase(),F1={"&":"&amp;",">":"&gt;","<":"&lt;",'"':"&quot;","'":"&#x27;"},H1=/[&><"']/g,m0=r=>String(r).replace(H1,e=>F1[e]),Ie=r=>r.type==="ordgroup"||r.type==="color"?r.body.length===1?Ie(r.body[0]):r:r.type==="font"?Ie(r.body):r,j1=new Set(["mathord","textord","atom"]),H0=r=>j1.has(Ie(r).type),O1=r=>{var e=/^[\x00-\x20]*([^\\/#?]*?)(:|&#0*58|&#x0*3a|&colon)/i.exec(r);return e?e[2]!==":"||!/^[a-zA-Z][a-zA-Z0-9+\-.]*$/.test(e[1])?null:e[1].toLowerCase():"_relative"},bt={displayMode:{type:"boolean",description:"Render math in display mode, which puts the math in display style (so \\int and \\sum are large, for example), and centers the math on the page on its own line.",cli:"-d, --display-mode"},output:{type:{enum:["htmlAndMathml","html","mathml"]},description:"Determines the markup language of the output.",cli:"-F, --format <type>"},leqno:{type:"boolean",description:"Render display math in leqno style (left-justified tags)."},fleqn:{type:"boolean",description:"Render display math flush left."},throwOnError:{type:"boolean",default:!0,cli:"-t, --no-throw-on-error",cliDescription:"Render errors (in the color given by --error-color) instead of throwing a ParseError exception when encountering an error."},errorColor:{type:"string",default:"#cc0000",cli:"-c, --error-color <color>",cliDescription:"A color string given in the format 'rgb' or 'rrggbb' (no #). This option determines the color of errors rendered by the -t option.",cliProcessor:r=>"#"+r},macros:{type:"object",cli:"-m, --macro <def>",cliDescription:"Define custom macro of the form '\\foo:expansion' (use multiple -m arguments for multiple macros).",cliDefault:[],cliProcessor:(r,e)=>(e.push(r),e)},minRuleThickness:{type:"number",description:"Specifies a minimum thickness, in ems, for fraction lines, `\\sqrt` top lines, `{array}` vertical lines, `\\hline`, `\\hdashline`, `\\underline`, `\\overline`, and the borders of `\\fbox`, `\\boxed`, and `\\fcolorbox`.",processor:r=>Math.max(0,r),cli:"--min-rule-thickness <size>",cliProcessor:parseFloat},colorIsTextColor:{type:"boolean",description:"Makes \\color behave like LaTeX's 2-argument \\textcolor, instead of LaTeX's one-argument \\color mode change.",cli:"-b, --color-is-text-color"},strict:{type:[{enum:["warn","ignore","error"]},"boolean","function"],description:"Turn on strict / LaTeX faithfulness mode, which throws an error if the input uses features that are not supported by LaTeX.",cli:"-S, --strict",cliDefault:!1},trust:{type:["boolean","function"],description:"Trust the input, enabling all HTML features such as \\url.",cli:"-T, --trust"},maxSize:{type:"number",default:1/0,description:"If non-zero, all user-specified sizes, e.g. in \\rule{500em}{500em}, will be capped to maxSize ems. Otherwise, elements and spaces can be arbitrarily large",processor:r=>Math.max(0,r),cli:"-s, --max-size <n>",cliProcessor:parseInt},maxExpand:{type:"number",default:1e3,description:"Limit the number of macro expansions to the specified number, to prevent e.g. infinite macro loops. If set to Infinity, the macro expander will try to fully expand as in LaTeX.",processor:r=>Math.max(0,r),cli:"-e, --max-expand <n>",cliProcessor:r=>r==="Infinity"?1/0:parseInt(r)},globalGroup:{type:"boolean",cli:!1}};function L1(r){if(typeof r!="string")return r.enum[0];switch(r){case"boolean":return!1;case"string":return"";case"number":return 0;case"object":return{};default:throw new Error("Unexpected schema type; settings must declare an explicit default.")}}function P1(r){if(r.default!==void 0)return r.default;var e=Array.isArray(r.type)?r.type[0]:r.type;return L1(e)}function $1(r,e,t,a){var n=t[e];r[e]=n!==void 0?a.processor?a.processor(n):n:P1(a)}class Ht{constructor(e){e===void 0&&(e={}),this.displayMode=void 0,this.output=void 0,this.leqno=void 0,this.fleqn=void 0,this.throwOnError=void 0,this.errorColor=void 0,this.macros=void 0,this.minRuleThickness=void 0,this.colorIsTextColor=void 0,this.strict=void 0,this.trust=void 0,this.maxSize=void 0,this.maxExpand=void 0,this.globalGroup=void 0,e=e||{};for(var t of Object.keys(bt)){var a=bt[t];a&&$1(this,t,e,a)}}reportNonstrict(e,t,a){var n=this.strict;if(typeof n=="function"&&(n=n(e,t,a)),!(!n||n==="ignore")){if(n===!0||n==="error")throw new A("LaTeX-incompatible input and strict mode is set to 'error': "+(t+" ["+e+"]"),a);n==="warn"?typeof console<"u"&&console.warn("LaTeX-incompatible input and strict mode is set to 'warn': "+(t+" ["+e+"]")):typeof console<"u"&&console.warn("LaTeX-incompatible input and strict mode is set to "+("unrecognized '"+n+"': "+t+" ["+e+"]"))}}useStrictBehavior(e,t,a){var n=this.strict;if(typeof n=="function")try{n=n(e,t,a)}catch{n="error"}return!n||n==="ignore"?!1:n===!0||n==="error"?!0:n==="warn"?(typeof console<"u"&&console.warn("LaTeX-incompatible input and strict mode is set to 'warn': "+(t+" ["+e+"]")),!1):(typeof console<"u"&&console.warn("LaTeX-incompatible input and strict mode is set to "+("unrecognized '"+n+"': "+t+" ["+e+"]")),!1)}isTrusted(e){if("url"in e&&e.url&&!e.protocol){var t=O1(e.url);if(t==null)return!1;e.protocol=t}var a=typeof this.trust=="function"?this.trust(e):this.trust;return!!a}}class $0{constructor(e,t,a){this.id=void 0,this.size=void 0,this.cramped=void 0,this.id=e,this.size=t,this.cramped=a}sup(){return C0[G1[this.id]]}sub(){return C0[U1[this.id]]}fracNum(){return C0[V1[this.id]]}fracDen(){return C0[X1[this.id]]}cramp(){return C0[Y1[this.id]]}text(){return C0[W1[this.id]]}isTight(){return this.size>=2}}var jt=0,je=1,ne=2,R0=3,fe=4,z0=5,ie=6,p0=7,C0=[new $0(jt,0,!1),new $0(je,0,!0),new $0(ne,1,!1),new $0(R0,1,!0),new $0(fe,2,!1),new $0(z0,2,!0),new $0(ie,3,!1),new $0(p0,3,!0)],G1=[fe,z0,fe,z0,ie,p0,ie,p0],U1=[z0,z0,z0,z0,p0,p0,p0,p0],V1=[ne,R0,fe,z0,ie,p0,ie,p0],X1=[R0,R0,z0,z0,p0,p0,p0,p0],Y1=[je,je,R0,R0,z0,z0,p0,p0],W1=[jt,je,ne,R0,ne,R0,ne,R0],j={DISPLAY:C0[jt],TEXT:C0[ne],SCRIPT:C0[fe],SCRIPTSCRIPT:C0[ie]},yt=[{name:"latin",blocks:[[256,591],[768,879]]},{name:"cyrillic",blocks:[[1024,1279]]},{name:"armenian",blocks:[[1328,1423]]},{name:"brahmic",blocks:[[2304,4255]]},{name:"georgian",blocks:[[4256,4351]]},{name:"cjk",blocks:[[12288,12543],[19968,40879],[65280,65376]]},{name:"hangul",blocks:[[44032,55215]]}];function Z1(r){for(var e=0;e<yt.length;e++)for(var t=yt[e],a=0;a<t.blocks.length;a++){var n=t.blocks[a];if(r>=n[0]&&r<=n[1])return t.name}return null}var Re=[];yt.forEach(r=>r.blocks.forEach(e=>Re.push(...e)));function ta(r){for(var e=0;e<Re.length;e+=2)if(r>=Re[e]&&r<=Re[e+1])return!0;return!1}var l0=r=>r+" "+r,ae=80,K1=function(e,t){return"M95,"+(622+e+t)+`
 c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
@@ -267,12 +267,12 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
 <title>${e} — ProStudy</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css"/>
 <style>
   :root{
-    --bg:#1a1714; --card:#242019; --code:#0f0d0b; --border:#3a342c;
-    --accent:#FF6524; --accent-2:#ff8a5c;
-    --text:#f0ebe3; --muted:#b8b0a4; --dim:#8a8175;
+    --bg:#ffffff; --text:#1e293b; --muted:#475569; --dim:#64748b;
+    --accent:#2563eb; --accent-dark:#1d4ed8; --accent-soft:rgba(37,99,235,.08);
+    --border:#e2e8f0; --code-bg:#f1f5f9;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);
@@ -280,39 +280,49 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
        -webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .page{max-width:860px;margin:0 auto;padding:0 36px 60px;}
 
+  /* ── סרגל פעולה (לא מודפס) ── */
+  .toolbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;
+    justify-content:space-between;gap:12px;background:#f8fafc;border-bottom:1px solid var(--border);
+    padding:12px 24px;margin-bottom:8px;}
+  .toolbar-hint{font-size:13px;color:var(--muted);}
+  .toolbar-btn{display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+    background:var(--accent);color:#fff;border:none;border-radius:10px;
+    font-family:'Heebo',sans-serif;font-size:14px;font-weight:800;padding:9px 20px;}
+  .toolbar-btn:hover{background:var(--accent-dark);}
+  @media print{ .toolbar{display:none !important;} }
+
   /* ── שער ── */
-  .cover{padding:48px 0 32px;margin-bottom:36px;border-bottom:1px solid var(--border);
-         position:relative;}
+  .cover{padding:40px 0 26px;margin-bottom:30px;border-bottom:2px solid var(--accent);}
   .cover-badge{display:inline-flex;align-items:center;gap:7px;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+    background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;
     font-size:12px;font-weight:800;letter-spacing:.5px;
     padding:6px 16px;border-radius:99px;margin-bottom:18px;}
-  .cover h1{font-size:38px;font-weight:900;letter-spacing:-1px;line-height:1.15;
-            color:#fff;margin-bottom:10px;}
+  .cover h1{font-size:36px;font-weight:900;letter-spacing:-1px;line-height:1.15;
+            color:var(--text);margin-bottom:10px;}
   .cover .date{font-size:14px;color:var(--dim);font-weight:500;}
 
   .content{counter-reset:section;}
 
   /* ── כותרות ── */
-  .content h1{font-size:26px;font-weight:900;color:#fff;margin:34px 0 14px;
+  .content h1{font-size:25px;font-weight:900;color:var(--text);margin:32px 0 14px;
               letter-spacing:-.5px;line-height:1.25;}
-  .content h2{font-size:21px;font-weight:800;color:#fff;
-              margin:36px 0 16px;padding-bottom:10px;
+  .content h2{font-size:21px;font-weight:800;color:var(--text);
+              margin:34px 0 16px;padding-bottom:10px;
               border-bottom:2px solid var(--accent);
               display:flex;align-items:center;gap:14px;counter-increment:section;}
   .content h2::before{content:counter(section);flex-shrink:0;
     width:38px;height:38px;border-radius:11px;
-    background:linear-gradient(135deg,var(--accent),#e5531a);color:#fff;
+    background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;
     display:inline-flex;align-items:center;justify-content:center;
     font-size:17px;font-weight:900;}
-  .content h3{font-size:17px;font-weight:800;color:var(--accent-2);margin:24px 0 8px;}
+  .content h3{font-size:17px;font-weight:800;color:var(--accent-dark);margin:24px 0 8px;}
   .content h4{font-size:15px;font-weight:700;color:var(--muted);margin:16px 0 6px;}
 
   /* ── טקסט ── */
   .content p{margin:0 0 12px;color:var(--text);}
-  .content strong{color:var(--accent-2);font-weight:800;}
+  .content strong{color:var(--accent-dark);font-weight:800;}
   .content em{color:var(--muted);font-style:italic;}
-  .content a{color:#82aaff;text-decoration:underline;}
+  .content a{color:var(--accent);text-decoration:underline;}
 
   /* ── רשימות ── */
   .content ul,.content ol{margin:10px 0 16px;padding:0;list-style:none;}
@@ -321,39 +331,39 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
     width:8px;height:8px;border-radius:50%;background:var(--accent);}
   .content ol{counter-reset:ol;}
   .content ol li{position:relative;padding-inline-start:32px;margin:8px 0;counter-increment:ol;}
-  .content ol li::before{content:counter(ol);position:absolute;inset-inline-start:0;top:0;
-    width:22px;height:22px;border-radius:6px;background:rgba(255,101,36,.15);
-    color:var(--accent);font-size:12px;font-weight:800;
+  .content ol li::before{content:counter(ol);position:absolute;inset-inline-start:0;top:1px;
+    width:23px;height:23px;border-radius:7px;background:var(--accent-soft);
+    color:var(--accent-dark);font-size:12px;font-weight:800;
     display:inline-flex;align-items:center;justify-content:center;}
 
   /* ── קוד inline ── */
-  .content code{background:rgba(255,101,36,.12);color:var(--accent-2);
-    border:1px solid rgba(255,101,36,.22);border-radius:5px;padding:2px 7px;
+  .content code{background:var(--accent-soft);color:var(--accent-dark);
+    border:1px solid rgba(37,99,235,.20);border-radius:5px;padding:2px 7px;
     font-family:'Fira Code',monospace;font-size:.84em;direction:ltr;
     display:inline-block;line-height:1.4;}
 
   /* ── בלוק קוד ── */
-  .content pre{background:var(--code);border:1px solid #2a241d;border-radius:12px;
+  .content pre{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;
     padding:18px 20px;overflow-x:auto;margin:16px 0;direction:ltr;text-align:left;
     font-size:13px;line-height:1.9;}
-  .content pre code{background:none;border:none;padding:0;color:#cdd5e0;
+  .content pre code{background:none;border:none;padding:0;
     font-family:'Fira Code',monospace;direction:ltr;display:block;font-size:13px;}
   /* הערות עברית בתוך קוד — בידוד כיווניות כדי שלא יישברו */
   .content pre .hljs-comment{unicode-bidi:isolate;}
 
   /* ── טבלאות ── */
   .content table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;
-    background:var(--card);border-radius:10px;overflow:hidden;}
-  .content th{background:rgba(255,101,36,.18);color:var(--accent-2);
+    border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .content th{background:var(--accent-soft);color:var(--accent-dark);
     text-align:right;font-weight:800;font-size:13px;padding:11px 15px;
     border-bottom:2px solid var(--accent);}
   .content td{padding:10px 15px;border-bottom:1px solid var(--border);
     color:var(--text);vertical-align:top;}
   .content tr:last-child td{border-bottom:none;}
-  .content tr:nth-child(even) td{background:rgba(255,255,255,.025);}
+  .content tr:nth-child(even) td{background:#f8fafc;}
 
   /* ── ציטוט / תיבת מידע ── */
-  .content blockquote{background:rgba(255,101,36,.08);
+  .content blockquote{background:var(--accent-soft);
     border-inline-start:4px solid var(--accent);
     padding:13px 18px;margin:14px 0;border-radius:0 10px 10px 0;color:var(--muted);}
 
@@ -361,14 +371,14 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
 
   /* ── מתמטיקה ── */
   .content .math-block{display:flex;justify-content:center;
-    background:rgba(255,101,36,.06);border:1px solid rgba(255,101,36,.16);
+    background:#f8fafc;border:1px solid var(--border);
     border-radius:10px;padding:18px;margin:16px 0;overflow-x:auto;direction:ltr;}
   .content .katex{font-size:1.1em;color:var(--text);}
   .content .math-block .katex{font-size:1.25em;}
 
   /* ── ויזואלים: SVG ── */
   .content .svg-figure{display:flex;justify-content:center;
-    background:#fbf9f5;border:1px solid var(--border);border-radius:12px;
+    background:#f8fafc;border:1px solid var(--border);border-radius:12px;
     padding:20px;margin:18px 0;overflow-x:auto;}
   .content .svg-figure svg{max-width:100%;height:auto;}
 
@@ -376,8 +386,8 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
   .content .flow{display:flex;flex-direction:column;align-items:center;
     gap:0;margin:20px 0;}
   .content .flow-step{position:relative;width:100%;max-width:560px;
-    background:linear-gradient(135deg,rgba(255,101,36,.10),rgba(255,101,36,.04));
-    border:1.5px solid rgba(255,101,36,.30);border-radius:12px;
+    background:var(--accent-soft);
+    border:1.5px solid rgba(37,99,235,.28);border-radius:12px;
     padding:13px 18px;text-align:center;font-weight:600;color:var(--text);
     font-size:14.5px;line-height:1.6;}
   .content .flow-step:not(:last-child){margin-bottom:34px;}
@@ -399,16 +409,13 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
   /* ── כותרת תחתונה ── */
   .footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);
     text-align:center;color:var(--dim);font-size:12px;font-weight:500;}
-
-  @media print{
-    body{background:var(--bg);}
-    .content pre,.content table,.content blockquote,.content h2::before,
-    .cover-badge,.content ol li::before{
-      -webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  }
 </style>
 </head>
 <body>
+<div class="toolbar">
+  <span class="toolbar-hint">לחץ "שמור כ-PDF" ובחר "Save as PDF" ביעד ההדפסה</span>
+  <button class="toolbar-btn" onclick="window.print()">⬇ שמור כ-PDF</button>
+</div>
 <div class="page">
   <div class="cover">
     <div class="cover-badge">✦ ProStudy · העוזר הלימודי</div>
@@ -424,7 +431,6 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
 <script type="module">
   // Chart.js נטען רק אם יש גרף בדף — חוסך טעינה מיותרת
   var charts = document.querySelectorAll('.chart-figure');
-  function finish(){ setTimeout(function(){ window.print(); }, 850); }
   window.addEventListener('load', async function(){
     try { if (window.hljs) hljs.highlightAll(); } catch(e){}
     if (charts.length) {
@@ -433,7 +439,7 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
         var Chart = mod.default;
         Chart.defaults.font.family = 'Heebo, sans-serif';
         Chart.defaults.animation = false;
-        var palette = ['#FF6524','#3b82f6','#10b981','#f59e0b','#a855f7','#ef4444'];
+        var palette = ['#2563eb','#10b981','#f59e0b','#a855f7','#ef4444','#0ea5e9'];
         charts.forEach(function(el){
           try {
             var raw = JSON.parse(el.getAttribute('data-chart'));
@@ -453,23 +459,23 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
             var s  = o.scales || {};
             var xt = (s.x && s.x.title) || {};
             var yt = (s.y && s.y.title) || {};
-            var muted = '#9a9185', soft = '#7a7165';
+            var muted = '#94a3b8', soft = '#64748b';
             var clean = {
               responsive: true, maintainAspectRatio: false,
               layout: { padding: 18 },
               plugins: {
                 legend: { display: multi, position: 'bottom',
                   labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8,
-                    padding: 18, font: { size: 12, family: 'Heebo' }, color: '#5a5044' } },
-                title: { display: !!t.text, text: t.text || '', color: '#2a251f',
+                    padding: 18, font: { size: 12, family: 'Heebo' }, color: '#475569' } },
+                title: { display: !!t.text, text: t.text || '', color: '#1e293b',
                   font: { size: 16, weight: '800', family: 'Heebo' }, padding: { bottom: 18 } },
                 tooltip: { enabled: false }
               },
               scales: {
-                x: { grid: { display: false }, border: { color: '#ddd5c9' },
+                x: { grid: { display: false }, border: { color: '#cbd5e1' },
                   ticks: { color: muted, font: { size: 11, family: 'Heebo' } },
                   title: { display: !!xt.text, text: xt.text || '', color: soft, font: { size: 12, family: 'Heebo' } } },
-                y: { grid: { color: '#f0ece4' }, border: { display: false },
+                y: { grid: { color: '#eef2f7' }, border: { display: false },
                   ticks: { color: muted, font: { size: 11, family: 'Heebo' } },
                   title: { display: !!yt.text, text: yt.text || '', color: soft, font: { size: 12, family: 'Heebo' } } }
               }
@@ -479,7 +485,6 @@ l0,-`+(t+144)+`c-2,-159.3,-10,-310.7,-24,-454c-53.3,-528,-210,-949.7,
         });
       } catch(e){}
     }
-    finish();
   });
 <\/script>
 </body>
