@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BookOpen, ListChecks, Clock, Gift, Check, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
+import { supabase } from '../lib/supabase';
 import { showToast } from '../lib/toast';
 import { burstConfetti } from '../lib/confetti';
 
@@ -10,7 +11,7 @@ const BONUS = 100;
 // First-session activation path: 3 steps to the "aha" moment, then a credit gift.
 // Visibility: until the bonus is claimed (profiles.activation_bonus_at, localStorage fallback).
 export default function ActivationChecklist({ onNavigate }) {
-  const { profile, updateProfile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const { courses, tasks } = useData();
   const [claiming, setClaiming] = useState(false);
   const [claimedLocal, setClaimedLocal] = useState(() => !!localStorage.getItem('ps_activation_claimed'));
@@ -48,13 +49,14 @@ export default function ActivationChecklist({ onNavigate }) {
     if (claiming) return;
     setClaiming(true);
     burstConfetti(e, 24);
-    const newCredits = (profile.credits || 0) + BONUS;
-    const { error } = await updateProfile({
-      credits: newCredits,
-      activation_bonus_at: new Date().toISOString(),
-    });
-    // If the column isn't in the DB yet, still award the credits
-    if (error) await updateProfile({ credits: newCredits });
+    // Steps + one-time claim are validated server-side (claim_activation_bonus RPC)
+    const { error } = await supabase.rpc('claim_activation_bonus');
+    if (error) {
+      setClaiming(false);
+      showToast({ type: 'info', text: 'עוד לא — השלם את שלושת הצעדים ונסה שוב' });
+      return;
+    }
+    await refreshProfile();
     localStorage.setItem('ps_activation_claimed', '1');
     showToast({ type: 'credits', amount: BONUS });
     setClaimedLocal(true);

@@ -181,11 +181,14 @@ function PactCard({ pact, userId, onLeave, onTasksChanged }) {
           <div className="pact-card-name">{pact.name}</div>
           <div className="pact-card-target">יעד: {pact.target_hours_per_week} שע׳ / שבוע</div>
         </div>
-        {isCreator && (
-          <button className="friend-btn friend-btn-reject" onClick={onLeave} aria-label="עזוב צוות" title="עזוב צוות">
-            <X size={14}/>
-          </button>
-        )}
+        <button
+          className="friend-btn friend-btn-reject"
+          onClick={onLeave}
+          aria-label={isCreator ? 'מחק צוות' : 'עזוב צוות'}
+          title={isCreator ? 'מחק צוות (אתה היוצר)' : 'עזוב צוות'}
+        >
+          <X size={14}/>
+        </button>
       </div>
 
       {/* League header */}
@@ -402,14 +405,23 @@ export default function Friends() {
   }, [fetchFriendships, fetchPacts, user.id]);
 
   useEffect(() => {
+    // Realtime: סטטוס "לומד עכשיו" של חברים, שינויים בחברויות, ושינויים בצוותים.
+    // דורש שהטבלאות יהיו ב-publication (ראה friends_timer_upgrade.sql).
     const channel = supabase
-      .channel('friend-live-status')
+      .channel('friends-live')
       .on('postgres_changes', { event:'UPDATE', schema:'public', table:'profiles' }, (payload) => {
         if (friendIdsRef.current.includes(payload.new.id)) fetchFriendships();
       })
+      .on('postgres_changes', { event:'*', schema:'public', table:'friendships',
+        filter:`addressee_id=eq.${user.id}` }, fetchFriendships)
+      .on('postgres_changes', { event:'*', schema:'public', table:'friendships',
+        filter:`requester_id=eq.${user.id}` }, fetchFriendships)
+      .on('postgres_changes', { event:'*', schema:'public', table:'pact_members' }, () => {
+        fetchPacts();
+      })
       .subscribe();
     return () => supabase.removeChannel(channel);
-  }, [fetchFriendships]);
+  }, [fetchFriendships, fetchPacts, user.id]);
 
   function searchUsers(query) {
     clearTimeout(searchTimer.current);
@@ -439,8 +451,15 @@ export default function Friends() {
     await supabase.from('friendships').delete().eq('id', friendshipId);
     await fetchFriendships(); setActionLoading(null);
   }
-  async function leavePact(pactId) {
-    await supabase.from('study_pacts').delete().eq('id', pactId);
+  async function leavePact(pactId, isCreator) {
+    if (isCreator) {
+      // היוצר מוחק את הצוות לכולם — לוודא שזו הכוונה
+      if (!window.confirm('אתה יוצר הצוות — יציאה תמחק את הצוות לכל החברים. להמשיך?')) return;
+      await supabase.from('study_pacts').delete().eq('id', pactId);
+    } else {
+      // חבר רגיל עוזב — מוחק רק את החברות שלו
+      await supabase.from('pact_members').delete().eq('pact_id', pactId).eq('user_id', user.id);
+    }
     fetchPacts();
   }
 
@@ -688,7 +707,7 @@ export default function Friends() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
             {pacts.map(p => (
-              <PactCard key={p.id} pact={p} userId={user.id} onLeave={() => leavePact(p.id)} onTasksChanged={fetchPacts}/>
+              <PactCard key={p.id} pact={p} userId={user.id} onLeave={() => leavePact(p.id, p.creator_id === user.id)} onTasksChanged={fetchPacts}/>
             ))}
           </div>
         )}

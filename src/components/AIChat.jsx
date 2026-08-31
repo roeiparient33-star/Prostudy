@@ -49,7 +49,9 @@ function AILoading() {
 // פותח לשונית עם תבנית מעוצבת (בהירה) — המשתמש שומר כ-PDF דרך כפתור.
 // כל העיצוב (צביעת תחביר, כותרות ממוספרות, נוסחאות) נעשה בצד הדפדפן — אפס טוקנים.
 function downloadAsPDF(content, fileName = 'סיכום') {
-  const html = renderMarkdown(content);
+  const html = renderMarkdown(content); // כבר עבר סניטציה בתוך renderMarkdown
+  // שם הקובץ מגיע מכותרת השיחה (תוכן לא-אמין) — escape לפני שיבוץ בתבנית
+  fileName = String(fileName).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const dateStr = new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' });
   const win = window.open('', '_blank');
   if (!win) return;

@@ -1,11 +1,13 @@
 import { useState, lazy, Suspense } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { useData } from './contexts/DataContext';
+import { supabase } from './lib/supabase';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import MobileTimerBar from './components/MobileTimerBar';
 import Topbar from './components/Topbar';
 import ToastHost from './components/ToastHost';
+import StudyCheckinModal from './components/StudyCheckinModal';
 import { isAdmin } from './lib/admin';
 
 // Auth screens stay eagerly loaded (first thing unauthenticated users see)
@@ -59,7 +61,7 @@ const PAGE_MAP = {
 };
 
 export default function App() {
-  const { user, profile, loading, updateProfile, isRecovery, clearRecovery } = useAuth();
+  const { user, profile, loading, refreshProfile, isRecovery, clearRecovery } = useAuth();
   const { dataLoading } = useData();
   const [page, setPage]         = useState('dashboard');
   const [authView, setAuthView] = useState(urlView || 'landing');
@@ -87,10 +89,9 @@ export default function App() {
       <Suspense fallback={<div className="auth-loading"><div className="auth-spinner"/></div>}>
       <AvatarOnboarding
         onSelect={async (presetIdx) => {
-          await updateProfile({
-            avatar_config:     { baseSelected: true, presetId: presetIdx, presetCfgs: {} },
-            presets_purchased: [presetIdx],
-          });
+          // Free starter preset — granted server-side, one time, base presets only
+          await supabase.rpc('select_initial_preset', { p_idx: presetIdx });
+          await refreshProfile();
         }}
       />
       </Suspense>
@@ -120,6 +121,7 @@ export default function App() {
       <HelpButton page={page}/>
       <PWAInstallBanner/>
       <ToastHost/>
+      <StudyCheckinModal/>
       <AchievementWatcher/>
     </>
   );

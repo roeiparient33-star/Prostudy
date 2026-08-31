@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Flame, Snowflake, X, Trophy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import { showToast } from '../lib/toast';
 import { getStreakStatus, FREEZE_COST, FREEZE_MAX } from '../lib/streak';
 import ModalPortal from './ModalPortal';
@@ -8,7 +9,7 @@ import ModalPortal from './ModalPortal';
 // Always-visible streak counter in the Topbar (Duolingo-style loss aversion).
 // Click opens details + the streak-freeze shop.
 export default function StreakBadge() {
-  const { profile, updateProfile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [open, setOpen] = useState(false);
   const [buying, setBuying] = useState(false);
 
@@ -18,10 +19,9 @@ export default function StreakBadge() {
   async function buyFreeze() {
     if (buying) return;
     setBuying(true);
-    const { error } = await updateProfile({
-      credits: (profile.credits || 0) - FREEZE_COST,
-      streak_freezes: freezes + 1,
-    });
+    // Balance check + charge happen atomically server-side (buy_streak_freeze RPC)
+    const { error } = await supabase.rpc('buy_streak_freeze');
+    if (!error) await refreshProfile();
     setBuying(false);
     if (error) {
       showToast({ type: 'info', text: 'הקנייה לא הצליחה — נסה שוב עוד רגע' });

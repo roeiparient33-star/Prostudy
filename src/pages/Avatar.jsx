@@ -52,14 +52,11 @@ export default function Avatar() {
   const pid = cfg.presetId;
   const ownedItems = (pid != null && purchased?.[pid]) ? purchased[pid] : [];
 
-  async function save(newCfg, newPurchased, newPresets, newCredits) {
+  // Only avatar_config (cosmetic equips) is written directly — purchases and
+  // credits go through server-side RPCs that check price + balance atomically.
+  async function save(newCfg) {
     setSaving(true);
-    await updateProfile({
-      avatar_config:    newCfg      ?? cfg,
-      avatar_purchased: newPurchased ?? purchased,
-      presets_purchased: newPresets  ?? presetsPurchased,
-      credits:          newCredits   ?? credits,
-    });
+    await updateProfile({ avatar_config: newCfg ?? cfg });
     setSaving(false);
   }
 
@@ -69,35 +66,42 @@ export default function Avatar() {
     if (isPremiumPreset(idx) && !JPG_SUPPORTED_CATEGORIES.includes(shopCat)) {
       setShopCat('aura');
     }
-    save(next, null, null, null);
+    save(next);
   }
 
-  function buyPreset(idx) {
+  async function buyPreset(idx) {
     const cost = PRESET_COSTS[idx];
-    if (credits < cost) return;
-    const newCredits = credits - cost;
-    const newPresets = [...presetsPurchased, idx];
-    const next       = { ...cfg, baseSelected: true, presetId: idx };
-    setCredits(newCredits);
-    setPresetsP(newPresets);
+    if (credits < cost || saving) return;
+    setSaving(true);
+    const { data: res, error } = await supabase.rpc('buy_preset', { p_idx: idx });
+    if (error || !res) { setSaving(false); return; }
+    setCredits(res.credits);
+    setPresetsP(res.presets_purchased);
+    const next = { ...cfg, baseSelected: true, presetId: idx };
     setCfg(next);
     if (isPremiumPreset(idx) && !JPG_SUPPORTED_CATEGORIES.includes(shopCat)) {
       setShopCat('aura');
     }
-    save(next, null, newPresets, newCredits);
+    await updateProfile({ avatar_config: next });
+    setSaving(false);
   }
 
-  function buyItem(item) {
-    if (pid == null || ownedItems.includes(item.id) || credits < item.cost) return;
-    const newCredits  = credits - item.cost;
-    const pc          = cfg.presetCfgs?.[pid] || {};
-    const newPc       = { ...pc, [item.category]: item.id };
-    const newCfg      = { ...cfg, presetCfgs: { ...(cfg.presetCfgs || {}), [pid]: newPc } };
-    const newPurchased= { ...purchased, [pid]: [...ownedItems, item.id] };
-    setCredits(newCredits);
+  async function buyItem(item) {
+    if (pid == null || ownedItems.includes(item.id) || credits < item.cost || saving) return;
+    setSaving(true);
+    const { data: res, error } = await supabase.rpc('buy_avatar_item', {
+      p_preset_id: pid,
+      p_item_id: item.id,
+    });
+    if (error || !res) { setSaving(false); return; }
+    setCredits(res.credits);
+    setPurchased(res.avatar_purchased);
+    const pc     = cfg.presetCfgs?.[pid] || {};
+    const newPc  = { ...pc, [item.category]: item.id };
+    const newCfg = { ...cfg, presetCfgs: { ...(cfg.presetCfgs || {}), [pid]: newPc } };
     setCfg(newCfg);
-    setPurchased(newPurchased);
-    save(newCfg, newPurchased, null, newCredits);
+    await updateProfile({ avatar_config: newCfg });
+    setSaving(false);
   }
 
   function equipItem(item) {

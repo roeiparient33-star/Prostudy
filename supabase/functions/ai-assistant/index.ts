@@ -48,12 +48,18 @@ const SYSTEM_PROMPT = `אתה העוזר הלימודי של ProStudy — פלט
 - לצורות גאומטריות, ישרי מספרים או דיאגרמות מותאמות בלבד — SVG (<svg viewBox> עם שוליים מספיקים; מקם תוויות מחוץ לאזור הציור כדי שלא יתנגשו; טקסט עברי: <text direction="rtl">).
 צייר ויזואלים רק כשהם באמת עוזרים להבנה, ושמור אותם פשוטים ונקיים.`;
 
-// CORS — הפונקציה נקראת מהדפדפן
+// CORS — הפונקציה נקראת מהדפדפן.
+// בפרודקשן: supabase secrets set ALLOWED_ORIGIN=https://<הדומיין-שלך>
+// (בלי הסוד — נשאר פתוח, כמו קודם, כדי לא לשבור סביבות פיתוח)
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "*",
   "Access-Control-Allow-Headers": "authorization, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// תקרות קלט — מגן מפני התקפת עלות (הודעות ענק = טוקני קלט בתשלום)
+const MAX_QUESTION_CHARS = 8000;
+const MAX_HISTORY_MSG_CHARS = 8000;
 
 // base64 בטוח לקבצים גדולים (btoa על מערך ענק מפוצץ את הסטאק)
 function toBase64(bytes: Uint8Array): string {
@@ -122,6 +128,9 @@ Deno.serve(async (req) => {
   }
   const { action = "question", question = "", filePath, fileType, history } = payload;
   const route = ROUTING[action] ?? ROUTING.question;
+  if (typeof question !== "string" || question.length > MAX_QUESTION_CHARS) {
+    return jsonError("question_too_long", 400);
+  }
 
   // ── 5. הורדת הקובץ מ-Storage (אם יש) ──
   // שאלת המשך (question + יש כבר היסטוריה): הידע כבר עובד וקיים בשיחה,
@@ -160,8 +169,21 @@ Deno.serve(async (req) => {
   content.push({ type: "text", text: question });
 
   // ── 6. קריאה ל-Claude עם streaming ──
-  // שולחים רק 10 ההודעות האחרונות (היסטוריה ארוכה = טוקנים מיותרים בכל בקשה)
-  const trimmedHistory = (history ?? []).slice(-10);
+  // שולחים רק 10 ההודעות האחרונות (היסטוריה ארוכה = טוקנים מיותרים בכל בקשה).
+  // ההיסטוריה מגיעה מהלקוח — מנרמלים תפקידים וקוטמים אורך (הגנה מפני התקפת עלות).
+  //
+  // חשוב ל-cache: היסטוריה נשלחת רק ב-question. ב-summary/practice/solve המסמך
+  // חייב לשבת ב-prefix קבוע (system → מסמך) — אם היסטוריה נדחפת לפניו, ה-prefix
+  // משתנה בכל קריאה וה-cache של המסמך (0.1x) מוחמץ ומשולם write מלא (2x) מחדש.
+  const trimmedHistory: Anthropic.MessageParam[] = action !== "question"
+    ? []
+    : (Array.isArray(history) ? history : [])
+      .slice(-10)
+      .map((m) => ({
+        role: m?.role === "assistant" ? "assistant" as const : "user" as const,
+        content: typeof m?.content === "string" ? m.content.slice(0, MAX_HISTORY_MSG_CHARS) : "",
+      }))
+      .filter((m) => m.content.length > 0);
 
   const streamParams: Anthropic.MessageStreamParams = {
     model: route.model,
@@ -170,8 +192,9 @@ Deno.serve(async (req) => {
     messages: [...trimmedHistory, { role: "user", content }],
   };
   if (route.think) {
-    // חשיבה מורחבת רק בפתרון תרגילים — איכות גבוהה בלי לשלם עליה בשאלות פשוטות
-    streamParams.thinking = { type: "enabled", budget_tokens: 4000 };
+    // חשיבה רק בפתרון תרגילים. Opus 4.8 תומך רק ב-adaptive —
+    // budget_tokens הוסר במודל הזה ומחזיר 400 (המודל מחליט לבד כמה לחשוב).
+    streamParams.thinking = { type: "adaptive" };
   }
 
   const stream = anthropic.messages.stream(streamParams);
@@ -203,8 +226,9 @@ Deno.serve(async (req) => {
 
         send({ done: true, remaining: limit - (count ?? 0) - 1 });
       } catch (err) {
+        // הפירוט נשאר בלוגים בלבד — ללקוח מוחזרת שגיאה גנרית (בלי מידע פנימי)
         console.error("ai-assistant error:", err);
-        send({ error: String(err) });
+        send({ error: "ai_error" });
       } finally {
         controller.close();
       }

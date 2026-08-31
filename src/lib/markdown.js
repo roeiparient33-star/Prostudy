@@ -2,7 +2,14 @@
 // משמש בעיקר לייצוא PDF. מתמטיקה: $$...$$ לבלוק, $...$ לאינליין.
 // צביעת תחביר של קוד נעשית בצד ה-PDF (highlight.js מ-CDN) דרך class="language-X".
 import katex from 'katex';
+import DOMPurify from 'dompurify';
 import 'katex/dist/katex.min.css'; // נדרש לתצוגת מתמטיקה inline בתשובות שאלה בצ'אט
+
+// תוכן ה-AI הוא קלט לא-אמין (מסמך זדוני יכול להזריק דרכו HTML/SVG עם סקריפטים).
+// כל SVG מסונן לפני הזרקה, וכל הפלט הסופי עובר DOMPurify ליתר ביטחון.
+function sanitizeSvg(svg) {
+  return DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
+}
 
 function escapeHtml(s) {
   return s
@@ -25,7 +32,11 @@ function inline(text) {
     .replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // קישורים: רק http/https (חוסם javascript: וכד' שמגיעים מתוכן ה-AI)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, href) =>
+      /^https?:\/\//i.test(href.trim())
+        ? `<a href="${href.trim()}" target="_blank" rel="noopener noreferrer">${label}</a>`
+        : label);
 }
 
 // שורת מפריד של טבלת Markdown: |---|---|
@@ -46,12 +57,12 @@ export function renderMarkdown(md) {
   // SVG גולמי — חלץ לפני escaping כדי שהתגיות יישמרו (גרפים, צורות, צירים)
   md = md.replace(/```svg\s*([\s\S]+?)```/gi, (_, svg) => {
     const key = `\x00MATH${mathIdx++}\x00`;
-    mathMap[key] = `<div class="svg-figure">${svg.trim()}</div>`;
+    mathMap[key] = `<div class="svg-figure">${sanitizeSvg(svg.trim())}</div>`;
     return key;
   });
   md = md.replace(/<svg[\s\S]*?<\/svg>/gi, (svg) => {
     const key = `\x00MATH${mathIdx++}\x00`;
-    mathMap[key] = `<div class="svg-figure">${svg}</div>`;
+    mathMap[key] = `<div class="svg-figure">${sanitizeSvg(svg)}</div>`;
     return key;
   });
 
@@ -196,5 +207,11 @@ export function renderMarkdown(md) {
   for (const [key, rendered] of Object.entries(mathMap)) {
     html = html.replace(escapeHtml(key), rendered);
   }
-  return html;
+
+  // ── שלב 4: סניטציה סופית — התוצר מוזרק ל-DOM (צ'אט + חלון PDF) ──
+  // data-chart נדרש לרינדור Chart.js; target/rel לקישורים בלשונית חדשה.
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true, svg: true, svgFilters: true },
+    ADD_ATTR: ['data-chart', 'target', 'rel'],
+  });
 }

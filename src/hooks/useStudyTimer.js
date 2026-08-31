@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../lib/toast';
-import { advanceStreak } from '../lib/streak';
 
 const LS_KEY = 'ps_timer_v2';
-const MAX_SESSION_SECS = 8 * 3600; // 8 שעות מקסימום לסשן אחד
+const MAX_SESSION_SECS = 4 * 3600;          // 4 שעות מקסימום לסשן אחד (כמו בשרת)
+const HEARTBEAT_MS     = 3 * 60 * 1000;     // פעימת חיים לשרת כל 3 דקות
+const CHECKIN_AFTER_MS = 55 * 60 * 1000;    // "עדיין לומד?" אחרי ~שעה
+const CHECKIN_GRACE_MS = 10 * 60 * 1000;    // בלי אישור תוך 10 דק' — עצירה אוטומטית
 
 function today() { return new Date().toISOString().split('T')[0]; }
 function startDay(ts) { return new Date(ts).toISOString().split('T')[0]; }
@@ -23,9 +25,12 @@ export function useStudyTimer(userId, onStopped) {
   const [isRunning,  setIsRunning]  = useState(saved.isRunning  ?? false);
   const [startedAt,  setStartedAt]  = useState(saved.startedAt  ?? null);
   const [accSeconds, setAccSeconds] = useState(saved.accSeconds ?? 0);
+  const [needsCheckin, setNeedsCheckin] = useState(false);
   const [, setTick] = useState(0);
-  const savingRef = useRef(false);
-  const stopRef   = useRef(null);
+  const savingRef       = useRef(false);
+  const stopRef         = useRef(null);
+  const lastConfirmRef  = useRef(Date.now()); // מתי המשתמש אישר לאחרונה שהוא לומד
+  const checkinShownRef = useRef(null);       // מתי הוצג ה"עדיין לומד?"
 
   // Tick every second when running
   useEffect(() => {
@@ -75,6 +80,42 @@ export function useStudyTimer(userId, onStopped) {
     localStorage.setItem(LS_KEY, JSON.stringify({ isRunning, startedAt, accSeconds, date: today() }));
   }, [isRunning, startedAt, accSeconds]);
 
+  // Heartbeat: מוכיח לשרת שהטאב חי. אם המחשב נרדם/הטאב נסגר —
+  // הפעימות נפסקות והשרת מזכה רק עד הפעימה האחרונה (+6 דק' חסד).
+  useEffect(() => {
+    if (!isRunning || !userId) return;
+    const id = setInterval(() => {
+      supabase.rpc('heartbeat_study_session').then(() => {});
+    }, HEARTBEAT_MS);
+    return () => clearInterval(id);
+  }, [isRunning, userId]);
+
+  // Check-in "עדיין לומד?": אחרי ~שעה בלי אישור מוצג פרומפט;
+  // בלי תגובה תוך 10 דקות — הסשן נעצר אוטומטית (אנטי-"השארתי דולק").
+  useEffect(() => {
+    if (!isRunning) { setNeedsCheckin(false); checkinShownRef.current = null; return; }
+    const id = setInterval(() => {
+      const now = Date.now();
+      if (!checkinShownRef.current && now - lastConfirmRef.current >= CHECKIN_AFTER_MS) {
+        checkinShownRef.current = now;
+        setNeedsCheckin(true);
+      } else if (checkinShownRef.current && now - checkinShownRef.current >= CHECKIN_GRACE_MS) {
+        checkinShownRef.current = null;
+        setNeedsCheckin(false);
+        stopRef.current?.();
+        showToast({ type: 'info', text: '⏸️ השעון נעצר אוטומטית — לא אישרת שאתה עדיין לומד' });
+      }
+    }, 30000);
+    return () => clearInterval(id);
+  }, [isRunning]);
+
+  const confirmCheckin = useCallback(() => {
+    lastConfirmRef.current = Date.now();
+    checkinShownRef.current = null;
+    setNeedsCheckin(false);
+    supabase.rpc('heartbeat_study_session').then(() => {});
+  }, []);
+
   // Save to Supabase when tab/window closes (if running)
   useEffect(() => {
     function handleUnload() {
@@ -91,16 +132,14 @@ export function useStudyTimer(userId, onStopped) {
     accSeconds + (isRunning && startedAt ? (Date.now() - startedAt) / 1000 : 0)
   );
 
-  // courseName is optional — passed through to Supabase for friend visibility
+  // courseName is optional — passed through to Supabase for friend visibility.
+  // הזמן נקבע בשרת (start_study_session) — הלקוח שומר עותק רק לתצוגה.
   const start = useCallback((courseName = '') => {
     setStartedAt(Date.now());
     setIsRunning(true);
+    lastConfirmRef.current = Date.now();
     if (userId) {
-      supabase.from('profiles').update({
-        session_active: true,
-        session_course_name: courseName,
-        session_started_at: new Date().toISOString(),
-      }).eq('id', userId).then(() => {});
+      supabase.rpc('start_study_session', { p_course_name: courseName }).then(() => {});
     }
   }, [userId]);
 
@@ -114,61 +153,25 @@ export function useStudyTimer(userId, onStopped) {
     setIsRunning(false);
     setStartedAt(null);
     setAccSeconds(newAccSeconds);
-
-    const sessionClear = {
-      session_active: false,
-      session_course_name: '',
-      session_started_at: '',
-    };
+    setNeedsCheckin(false);
+    checkinShownRef.current = null;
 
     if (userId) {
-      if (sessionSecs >= 5) {
-        const creditsEarned = Math.ceil(sessionSecs / 60);
-        const minsStudied   = Math.ceil(sessionSecs / 60);
-
-        const { data: prof } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (prof) {
-          const todayStr = new Date().toISOString().split('T')[0];
-          const adv      = advanceStreak(prof, todayStr); // null = כבר נספר רצף היום
-
-          const streakUpdates = adv
-            ? {
-                streak_current:   adv.streak_current,
-                streak_best:      adv.streak_best,
-                streak_last_date: adv.streak_last_date,
-                streak_freezes:   adv.streak_freezes,
-              }
-            : {};
-
-          const updates = {
-            ...sessionClear,
-            ...streakUpdates,
-            credits:                (prof.credits               || 0) + creditsEarned,
-            weekly_studied_minutes: (prof.weekly_studied_minutes || 0) + minsStudied,
-            total_studied_minutes:  (prof.total_studied_minutes  || 0) + minsStudied,
-          };
-          const { error: updErr } = await supabase.from('profiles').update(updates).eq('id', userId);
-          if (updErr && 'streak_freezes' in updates) {
-            // DB doesn't have the freezes column yet — save everything else
-            delete updates.streak_freezes;
-            await supabase.from('profiles').update(updates).eq('id', userId);
-          }
-          showToast({ type: 'credits', amount: creditsEarned, streak: adv ? adv.streak_current : null });
-          if (adv?.freezesUsed > 0) {
-            showToast({ type: 'info', text: `❄️ הקפאת רצף הצילה את הרצף שלך! (${adv.freezesUsed} נוצלו)` });
-          }
-          onStopped?.();
-        } else {
-          await supabase.from('profiles').update(sessionClear).eq('id', userId);
+      // המשך, הקרדיטים והרצף מחושבים כולם בשרת (זמן שרת + heartbeat) —
+      // הלקוח לא שולח משך ולא יכול לזייף אותו.
+      const { data: res, error } = await supabase.rpc('finish_study_session');
+      if (error) {
+        showToast({ type: 'info', text: 'שמירת הסשן נכשלה — בדוק חיבור ונסה שוב' });
+      } else if (res && res.credits_earned > 0) {
+        showToast({
+          type: 'credits',
+          amount: res.credits_earned,
+          streak: res.streak_counted ? res.streak_current : null,
+        });
+        if (res.freezes_used > 0) {
+          showToast({ type: 'info', text: `❄️ הקפאת רצף הצילה את הרצף שלך! (${res.freezes_used} נוצלו)` });
         }
-      } else {
-        // Session too short for credits — still clear live status
-        await supabase.from('profiles').update(sessionClear).eq('id', userId);
+        onStopped?.();
       }
     }
 
@@ -185,7 +188,7 @@ export function useStudyTimer(userId, onStopped) {
     localStorage.removeItem(LS_KEY);
   }, []);
 
-  return { isRunning, currentSeconds, start, stop, resetDay };
+  return { isRunning, currentSeconds, start, stop, resetDay, needsCheckin, confirmCheckin };
 }
 
 export function formatTime(totalSeconds) {

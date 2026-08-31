@@ -12,7 +12,8 @@ export default function NotificationBell() {
   const { tasks } = useData();
   const [open,    setOpen]    = useState(false);
   const [invites, setInvites] = useState([]);
-  const [loading, setLoading] = useState(null); // pact_id being responded
+  const [friendReqs, setFriendReqs] = useState([]);
+  const [loading, setLoading] = useState(null); // pact_id / friendship_id being responded
 
   const fetchInvites = useCallback(async () => {
     if (!user) return;
@@ -24,19 +25,35 @@ export default function NotificationBell() {
     setInvites(data || []);
   }, [user?.id]); // eslint-disable-line
 
+  const fetchFriendReqs = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('friendships')
+      .select('id, requester:profiles!requester_id(id, name)')
+      .eq('addressee_id', user.id)
+      .eq('status', 'pending');
+    setFriendReqs(data || []);
+  }, [user?.id]); // eslint-disable-line
+
   useEffect(() => {
     fetchInvites();
+    fetchFriendReqs();
     if (!user) return;
-    // Realtime: listen for new invitations
+    // Realtime: הזמנות לצוות + בקשות חברות נכנסות (דורש שהטבלאות
+    // יהיו ב-publication של supabase_realtime — ראה friends_timer_upgrade.sql)
     const ch = supabase
-      .channel(`notif-pact-${user.id}`)
+      .channel(`notif-${user.id}`)
       .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'pact_members',
+        event: '*', schema: 'public', table: 'pact_members',
         filter: `user_id=eq.${user.id}`,
       }, fetchInvites)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'friendships',
+        filter: `addressee_id=eq.${user.id}`,
+      }, fetchFriendReqs)
       .subscribe();
     return () => supabase.removeChannel(ch);
-  }, [user?.id, fetchInvites]); // eslint-disable-line
+  }, [user?.id, fetchInvites, fetchFriendReqs]); // eslint-disable-line
 
   async function accept(pactId) {
     setLoading(pactId);
@@ -52,12 +69,26 @@ export default function NotificationBell() {
     setLoading(null);
   }
 
+  async function acceptFriend(friendshipId) {
+    setLoading(friendshipId);
+    await supabase.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId);
+    await fetchFriendReqs();
+    setLoading(null);
+  }
+
+  async function declineFriend(friendshipId) {
+    setLoading(friendshipId);
+    await supabase.from('friendships').delete().eq('id', friendshipId);
+    await fetchFriendReqs();
+    setLoading(null);
+  }
+
   // Task deadline reminders (today + tomorrow, not completed)
   const today    = TODAY();
   const tomorrow = TOMORROW();
   const deadlines = tasks.filter(t => !t.completed && (t.dueDate === today || t.dueDate === tomorrow));
 
-  const total = invites.length + deadlines.length;
+  const total = invites.length + friendReqs.length + deadlines.length;
 
   return (
     <div className="notif-wrap">
@@ -121,6 +152,42 @@ export default function NotificationBell() {
                                 <button
                                   className="notif-btn notif-btn-decline"
                                   onClick={() => decline(inv.pact_id)}
+                                  disabled={busy}
+                                >
+                                  <X size={12}/> דחה
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ── בקשות חברות ── */}
+                  {friendReqs.length > 0 && (
+                    <div className="notif-section">
+                      <div className="notif-section-label">בקשות חברות</div>
+                      {friendReqs.map(req => {
+                        const busy = loading === req.id;
+                        return (
+                          <div key={req.id} className="notif-item">
+                            <div className="notif-item-emoji">👋</div>
+                            <div className="notif-item-body">
+                              <div className="notif-item-text">
+                                <strong>{req.requester?.name || 'משתמש'}</strong> רוצה להתחבר איתך
+                              </div>
+                              <div className="notif-item-actions">
+                                <button
+                                  className="notif-btn notif-btn-accept"
+                                  onClick={() => acceptFriend(req.id)}
+                                  disabled={busy}
+                                >
+                                  {busy ? '...' : <><Check size={12}/> אשר</>}
+                                </button>
+                                <button
+                                  className="notif-btn notif-btn-decline"
+                                  onClick={() => declineFriend(req.id)}
                                   disabled={busy}
                                 >
                                   <X size={12}/> דחה

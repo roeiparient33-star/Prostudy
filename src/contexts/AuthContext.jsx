@@ -66,35 +66,24 @@ export function AuthProvider({ children }) {
 
     if (!data) { setLoading(false); return; }
 
-    // Weekly reset
+    // Weekly reset — computed and applied server-side (RPC), client only mirrors
     if (typeof data.weekly_reset_date === 'string' && data.weekly_reset_date !== getWeekKey()) {
-      const reset = { weekly_studied_minutes: 0, weekly_reset_date: getWeekKey() };
-      await supabase.from('profiles').update(reset).eq('id', userId);
-      data = { ...data, ...reset };
+      const { data: res } = await supabase.rpc('reset_weekly_minutes');
+      if (res?.reset) data = { ...data, weekly_studied_minutes: 0, weekly_reset_date: res.week_key };
     }
 
-    // Generate invite code if missing
+    // Generate invite code if missing — server-side (unique, collision-safe)
     if (!data.invite_code) {
-      const code = Math.random().toString(36).substr(2, 8).toUpperCase();
-      await supabase.from('profiles').update({ invite_code: code }).eq('id', userId);
-      data = { ...data, invite_code: code };
+      const { data: code } = await supabase.rpc('ensure_invite_code');
+      if (code) data = { ...data, invite_code: code };
     }
 
-    // Apply referral reward (only once — referred_by is null before applying)
+    // Apply referral reward — atomic server-side RPC (rewards both sides, once)
     if (!data.referred_by) {
       const refCode = localStorage.getItem('ps_ref');
       if (refCode) {
-        const { data: inviter } = await supabase
-          .from('profiles')
-          .select('id, credits')
-          .eq('invite_code', refCode)
-          .neq('id', userId)
-          .single();
-        if (inviter) {
-          await supabase.from('profiles').update({ credits: (inviter.credits || 0) + 50 }).eq('id', inviter.id);
-          await supabase.from('profiles').update({ credits: (data.credits || 0) + 30, referred_by: inviter.id }).eq('id', userId);
-          data = { ...data, credits: (data.credits || 0) + 30, referred_by: inviter.id };
-        }
+        const { data: res } = await supabase.rpc('apply_referral', { p_code: refCode });
+        if (res?.applied) data = { ...data, credits: res.credits, referred_by: res.referred_by };
         localStorage.removeItem('ps_ref');
       }
     }
