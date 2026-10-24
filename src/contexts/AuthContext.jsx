@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { setActiveUser } from '../data/localStore';
+import { LS_KEY as TIMER_LS_KEY } from '../hooks/useStudyTimer';
 
 function getWeekKey() {
   const d = new Date();
@@ -127,7 +128,7 @@ export function AuthProvider({ children }) {
 
   async function signOut() {
     setActiveUser('');
-    localStorage.removeItem('ps_timer_v2');
+    localStorage.removeItem(TIMER_LS_KEY);
     await supabase.auth.signOut();
   }
 

@@ -2,29 +2,43 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../lib/toast';
 
-const LS_KEY = 'ps_timer_v2';
+// v3: הגרסה הקודמת שמרה לפעמים בלי תאריך / בתאריך UTC — מתחילים נקי (תצוגה בלבד, הקרדיטים בשרת)
+export const LS_KEY = 'ps_timer_v3';
+try { localStorage.removeItem('ps_timer_v2'); } catch { /* ignore */ }
 const MAX_SESSION_SECS = 4 * 3600;          // 4 שעות מקסימום לסשן אחד (כמו בשרת)
 const HEARTBEAT_MS     = 3 * 60 * 1000;     // פעימת חיים לשרת כל 3 דקות
 const CHECKIN_AFTER_MS = 55 * 60 * 1000;    // "עדיין לומד?" אחרי ~שעה
 const CHECKIN_GRACE_MS = 10 * 60 * 1000;    // בלי אישור תוך 10 דק' — עצירה אוטומטית
 
-function today() { return new Date().toISOString().split('T')[0]; }
-function startDay(ts) { return new Date(ts).toISOString().split('T')[0]; }
+// תאריך מקומי (שעון המשתמש) — לא UTC, אחרת "יום חדש" מתחיל ב-02:00/03:00 בישראל
+function localDay(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function today() { return localDay(Date.now()); }
 
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(LS_KEY)) || {};
-    if (saved.date && saved.date !== today()) return {}; // יום חדש — איפוס
+    // יום אחר, או רשומה ישנה בלי תאריך — מתחילים מאפס.
+    // אם נשאר סשן "רץ" מאז — מסמנים אותו לסגירה בשרת.
+    if (saved.date !== today()) return { staleSession: !!saved.isRunning };
+    // סשן שרץ יותר מהתקרה (טאב שנשכח פתוח) — לא ממשיכים אותו
+    if (saved.isRunning && (!saved.startedAt || Date.now() - saved.startedAt >= MAX_SESSION_SECS * 1000)) {
+      return { accSeconds: saved.accSeconds ?? 0, staleSession: true };
+    }
     return saved;
   } catch { return {}; }
 }
 
 export function useStudyTimer(userId, onStopped) {
-  const saved = loadState();
+  const [saved] = useState(loadState);
 
   const [isRunning,  setIsRunning]  = useState(saved.isRunning  ?? false);
   const [startedAt,  setStartedAt]  = useState(saved.startedAt  ?? null);
   const [accSeconds, setAccSeconds] = useState(saved.accSeconds ?? 0);
+  const dayRef        = useRef(today());  // היום שאליו שייך accSeconds
+  const staleCloseRef = useRef(saved.staleSession ?? false);
   const [needsCheckin, setNeedsCheckin] = useState(false);
   const [, setTick] = useState(0);
   const savingRef       = useRef(false);
@@ -39,45 +53,48 @@ export function useStudyTimer(userId, onStopped) {
     return () => clearInterval(id);
   }, [isRunning]);
 
-  // Auto-stop + midnight reset: check every minute
+  // סשן שנשאר "רץ" מביקור קודם (יום אחר / מעל התקרה) — סוגרים אותו בשרת.
+  // השרת מזכה רק עד הפעימה האחרונה (+6 דק'), ומפסיק להציג "לומד עכשיו" לחברים.
   useEffect(() => {
-    if (!isRunning || !startedAt) return;
-    const id = setInterval(async () => {
-      const sessionSecs = Math.floor((Date.now() - startedAt) / 1000);
-      const dayChanged  = today() !== startDay(startedAt);
-      if (dayChanged || sessionSecs >= MAX_SESSION_SECS) {
-        await stopRef.current?.();
-        if (dayChanged) {
-          // New day — reset the display counter to 0
-          setAccSeconds(0);
-          localStorage.setItem(LS_KEY, JSON.stringify({
-            isRunning: false, startedAt: null, accSeconds: 0, date: today(),
-          }));
-        }
+    if (!userId || !staleCloseRef.current) return;
+    staleCloseRef.current = false;
+    supabase.rpc('finish_study_session').then(({ data: res }) => {
+      if (res?.credits_earned > 0) {
+        showToast({ type: 'credits', amount: res.credits_earned, streak: res.streak_counted ? res.streak_current : null });
+        onStopped?.();
       }
-    }, 60000);
-    return () => clearInterval(id);
-  }, [isRunning, startedAt]);
+    });
+  }, [userId, onStopped]);
 
-  // Reset display when day changes while page is open but timer is stopped
+  // מעבר יום + תקרת סשן. רץ כל 30 שניות, וגם מיד כשחוזרים לטאב —
+  // טיימרים מושהים כשהמחשב ישן / הטאב ברקע, אז לא מחכים לאינטרוול.
   useEffect(() => {
-    if (isRunning) return;
-    const id = setInterval(() => {
-      const saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-      if (saved.date && saved.date !== today()) {
+    async function checkDay() {
+      const dayChanged = dayRef.current !== today();
+      const overCap = isRunning && startedAt && Date.now() - startedAt >= MAX_SESSION_SECS * 1000;
+      if (!dayChanged && !overCap) return;
+      if (isRunning) await stopRef.current?.();
+      if (dayChanged) {
+        dayRef.current = today();
         setAccSeconds(0);
         setStartedAt(null);
-        localStorage.setItem(LS_KEY, JSON.stringify({
-          isRunning: false, startedAt: null, accSeconds: 0, date: today(),
-        }));
       }
-    }, 60000);
-    return () => clearInterval(id);
-  }, [isRunning]);
+    }
+    checkDay();
+    const id = setInterval(checkDay, 30000);
+    const onVisible = () => { if (document.visibilityState === 'visible') checkDay(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', checkDay);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', checkDay);
+    };
+  }, [isRunning, startedAt]);
 
-  // Persist to localStorage on every state change
+  // Persist to localStorage on every state change (always with the day it belongs to)
   useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify({ isRunning, startedAt, accSeconds, date: today() }));
+    localStorage.setItem(LS_KEY, JSON.stringify({ isRunning, startedAt, accSeconds, date: dayRef.current }));
   }, [isRunning, startedAt, accSeconds]);
 
   // Heartbeat: מוכיח לשרת שהטאב חי. אם המחשב נרדם/הטאב נסגר —
@@ -115,18 +132,6 @@ export function useStudyTimer(userId, onStopped) {
     setNeedsCheckin(false);
     supabase.rpc('heartbeat_study_session').then(() => {});
   }, []);
-
-  // Save to Supabase when tab/window closes (if running)
-  useEffect(() => {
-    function handleUnload() {
-      if (!isRunning || !startedAt) return;
-      const sessionSecs = Math.floor((Date.now() - startedAt) / 1000);
-      const total = accSeconds + sessionSecs;
-      localStorage.setItem(LS_KEY, JSON.stringify({ isRunning: true, startedAt, accSeconds: total }));
-    }
-    window.addEventListener('beforeunload', handleUnload);
-    return () => window.removeEventListener('beforeunload', handleUnload);
-  }, [isRunning, startedAt, accSeconds]);
 
   const currentSeconds = Math.floor(
     accSeconds + (isRunning && startedAt ? (Date.now() - startedAt) / 1000 : 0)
