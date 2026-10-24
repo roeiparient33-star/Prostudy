@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Plus, X, Clock, CalendarDays, ChevronRight, ChevronLeft, GraduationCap, Bell, Check } from 'lucide-react';
 import ModalPortal from '../components/ModalPortal';
-import { useData } from '../contexts/DataContext';
+import { useData, SCHEDULE_LS_KEY, SEMESTER_RESET_EVENT } from '../contexts/DataContext';
 
 const DAYS    = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי'];
 const HOURS   = [8,9,10,11,12,13,14,15,16,17,18,19,20];
@@ -11,7 +11,7 @@ const TOTAL_H = HOURS.length * CELL_H;
 const TYPE_LABELS = { lecture: 'הרצאה', practice: 'תרגול', exercise: 'תרגיל בית' };
 const TYPE_COLORS = { lecture: '#4F7EF7', practice: '#9B71F7', exercise: '#28C96F' };
 
-const LS_KEY = 'ps_schedule_v1';
+const LS_KEY = SCHEDULE_LS_KEY;
 
 function loadEvents() {
   try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; }
@@ -55,6 +55,13 @@ export default function Schedule() {
   const [detail,     setDetail]     = useState(null); // יום שנפתח לפירוט (מבחנים + משימות)
   const [weekOffset, setWeekOffset] = useState(0);
   const { courses, tasks, exams, updateTask } = useData();
+
+  // איפוס "סמסטר חדש" מההגדרות — מנקה את המערכת גם אם הדף פתוח כרגע
+  useEffect(() => {
+    const onReset = () => setEvents([]);
+    window.addEventListener(SEMESTER_RESET_EVENT, onReset);
+    return () => window.removeEventListener(SEMESTER_RESET_EVENT, onReset);
+  }, []);
 
   const courseById = useMemo(
     () => Object.fromEntries(courses.map(c => [c.id, c])),

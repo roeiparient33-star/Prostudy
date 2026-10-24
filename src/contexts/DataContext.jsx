@@ -4,6 +4,10 @@ import { useAuth } from './AuthContext';
 
 const DataContext = createContext(null);
 
+// מערכת השעות נשמרת ב-localStorage (לא ב-DB) — ראה Schedule.jsx
+export const SCHEDULE_LS_KEY      = 'ps_schedule_v1';
+export const SEMESTER_RESET_EVENT = 'ps:semester-reset';
+
 // ── Supabase row → React object mappers ──────────────────────────────────────
 const toCourse = r => ({
   id: r.id, name: r.name, code: r.code,
@@ -142,12 +146,31 @@ export function DataProvider({ children }) {
     setExams(p => p.filter(e => e.id !== id));
   }
 
+  // ── סמסטר חדש ──────────────────────────────────────────────────────────────
+  // מוחק את כל הקורסים, המשימות, המבחנים ומערכת השעות של המשתמש.
+  // קרדיטים, רצף, גביעים, אווטר, חברים וחומרי לימוד — נשמרים.
+  async function resetSemester() {
+    const [t, e] = await Promise.all([
+      supabase.from('tasks').delete().eq('user_id', user.id),
+      supabase.from('exams').delete().eq('user_id', user.id),
+    ]);
+    const c = await supabase.from('courses').delete().eq('user_id', user.id);
+    const error = t.error || e.error || c.error;
+    if (error) return { error };
+
+    setTasks([]); setExams([]); setCourses([]);
+    localStorage.removeItem(SCHEDULE_LS_KEY);
+    window.dispatchEvent(new Event(SEMESTER_RESET_EVENT));
+    return { error: null };
+  }
+
   return (
     <DataContext.Provider value={{
       courses, tasks, exams, courseStats, dataLoading: loading,
       addCourse, updateCourse, removeCourse,
       addTask, updateTask, removeTask,
       addExam, updateExam, removeExam,
+      resetSemester,
     }}>
       {children}
     </DataContext.Provider>
